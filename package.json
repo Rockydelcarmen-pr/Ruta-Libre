@@ -4,7 +4,8 @@
   "private": true,
   "description": "Bilingual PWA that routes people around active protests and marches.",
   "workspaces": [
-    "backend"
+    "backend",
+    "frontend"
   ],
   "scripts": {
     "dev:api": "npm run dev --workspace backend",

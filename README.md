@@ -12,23 +12,50 @@ choose to reroute, join, or plan around it with full information.
 
 ## Status
 
-Early. This repo currently holds the build spec and roadmap only — no app code
-yet. See:
+Foundation in place. The backend API and the frontend PWA shell are written and
+both typecheck / build cleanly (0 npm audit vulnerabilities). Not yet run against
+a live database or the Google APIs — that needs a Postgres+PostGIS instance and
+API keys (see Prerequisites in [PLAN.md](PLAN.md)). Map + route UI is
+intentionally deferred behind the Maps key.
 
 - [docs/handoff.md](docs/handoff.md) — the full build spec (stack, schema, API, matching logic)
-- [PLAN.md](PLAN.md) — phased build plan mapped to the v1 feature checklist
+- [PLAN.md](PLAN.md) — phased build plan with progress
 
-## Stack (planned)
+## Stack
 
-- **Frontend:** React + Vite, PWA (`vite-plugin-pwa`)
-- **Backend:** Fastify + TypeScript
+- **Frontend:** React + Vite 7, PWA (`vite-plugin-pwa`), react-i18next (EN/ES)
+- **Backend:** Fastify 5 + TypeScript
 - **Database:** PostgreSQL + PostGIS
-- **Maps/Routing:** Google Maps JS SDK + Directions API
-- **i18n:** react-i18next (EN/ES)
+- **Maps/Routing:** Google Maps JS SDK + Directions API (deferred until key)
+
+## Layout
+
+```
+backend/    Fastify API: auth, protest CRUD, PostGIS match engine
+frontend/   Vite React PWA: bilingual UI, theming, protest list, match panel
+docs/       build spec
+```
 
 ## Getting started
 
-Nothing to run yet. The first build session will scaffold `frontend/` and
-`backend/` (see Phase 0 in [PLAN.md](PLAN.md)). Before the map/matching features
-work you'll need a Google Maps API key (Maps JS + Directions API) and a
-PostgreSQL + PostGIS instance — see the Prerequisites section in the plan.
+Requires Node 20+. For the database you need Docker (for the bundled
+`docker-compose.yml`) or any Postgres 15+ with PostGIS.
+
+```bash
+npm install                       # installs both workspaces
+
+cp backend/.env.example backend/.env      # set JWT_SECRET; DATABASE_URL matches compose
+cp frontend/.env.example frontend/.env.local
+
+npm run db:up                     # start Postgres+PostGIS (Docker)
+npm run db:migrate                # create the schema
+npm run db:seed                   # admin user + access key + sample protests
+
+npm run dev:api                   # backend on :3000
+npm run dev:web                   # frontend on :5173 (proxies /api -> :3000)
+```
+
+The `/api/protests/match` endpoint returns a clean `503 directions_unconfigured`
+until `GOOGLE_DIRECTIONS_API_KEY` is set in `backend/.env`; the frontend map
+panel stays in its "pending" state until `VITE_GOOGLE_MAPS_API_KEY` is set in
+`frontend/.env.local`.
