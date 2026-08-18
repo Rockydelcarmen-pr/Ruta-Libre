@@ -1,0 +1,22 @@
+{
+  "name": "protest-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bilingual PWA that routes people around active protests and marches.",
+  "workspaces": [
+    "backend"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace backend",
+    "dev:web": "npm run dev --workspace frontend",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run migrate --workspace backend",
+    "db:seed": "npm run seed --workspace backend"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

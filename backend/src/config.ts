@@ -1,0 +1,35 @@
+import "dotenv/config";
+import { z } from "zod";
+
+const schema = z.object({
+  PORT: z.coerce.number().default(3000),
+  HOST: z.string().default("0.0.0.0"),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  DATABASE_URL: z.string().url(),
+  JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters"),
+  JWT_EXPIRES_IN: z.string().default("7d"),
+  BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(15).default(12),
+  GOOGLE_DIRECTIONS_API_KEY: z.string().default(""),
+  CORS_ORIGINS: z.string().default("http://localhost:5173"),
+  MATCH_BUFFER_METERS: z.coerce.number().positive().default(200),
+});
+
+const parsed = schema.safeParse(process.env);
+if (!parsed.success) {
+  console.error(
+    "Invalid environment configuration:",
+    parsed.error.flatten().fieldErrors,
+  );
+  process.exit(1);
+}
+
+const env = parsed.data;
+
+export const config = {
+  ...env,
+  corsOrigins: env.CORS_ORIGINS.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+  isProd: env.NODE_ENV === "production",
+  hasDirectionsKey: env.GOOGLE_DIRECTIONS_API_KEY.length > 0,
+};
