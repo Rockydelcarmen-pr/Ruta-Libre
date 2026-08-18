@@ -5,6 +5,8 @@ import { registerAuth } from "./plugins/auth.js";
 import { authRoutes } from "./routes/auth.js";
 import { protestRoutes } from "./routes/protests.js";
 import { matchRoutes } from "./routes/match.js";
+import { parkingRoutes } from "./routes/parking.js";
+import { chipRoutes } from "./routes/chips.js";
 import { pool } from "./db/pool.js";
 
 async function build() {
@@ -42,6 +44,8 @@ async function build() {
   await app.register(authRoutes);
   await app.register(protestRoutes);
   await app.register(matchRoutes);
+  await app.register(parkingRoutes);
+  await app.register(chipRoutes);
 
   app.setErrorHandler((err: FastifyError, _req, reply) => {
     app.log.error(err);

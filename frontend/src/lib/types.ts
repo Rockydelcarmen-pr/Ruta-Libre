@@ -55,3 +55,40 @@ export interface MatchResponse {
   suggested_route_has_conflict?: boolean;
   calendar_links: CalendarLinks | null;
 }
+
+export type Role = "public" | "approved" | "admin";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: Role;
+}
+
+export interface AuthResult {
+  token: string;
+  user: AuthUser;
+}
+
+export interface ParkingSpot {
+  source: "admin" | "osm";
+  id: string;
+  name: string | null;
+  kind: string;
+  lat: number;
+  lng: number;
+  capacity: number | null;
+  notes_en: string | null;
+  notes_es: string | null;
+}
+
+/** Ephemeral community parking report. */
+export interface Chip {
+  id: string;
+  lat: number;
+  lng: number;
+  note: string | null;
+  status: "available" | "taken";
+  reported_by: string | null;
+  created_at: string;
+  expires_at: string;
+}

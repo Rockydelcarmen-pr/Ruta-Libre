@@ -10,6 +10,11 @@ Not a "avoid the protesters" tool in spirit: it surfaces *why* a march is
 happening (organizers, cause, external links, add-to-calendar) so people can
 choose to reroute, join, or plan around it with full information.
 
+It also helps with the practical fallout: nearby **legal parking** (admin-curated
++ OpenStreetMap) is surfaced at the destination, and logged-in users can share
+ephemeral parking **"chips"** (drop a spot with potential parking; others mark it
+taken, which takes it down; chips auto-expire).
+
 ## Status
 
 Foundation in place. The backend API and the frontend PWA shell are written and
@@ -32,7 +37,7 @@ intentionally deferred behind the Maps key.
 ## Layout
 
 ```
-backend/    Fastify API: auth, protest CRUD, PostGIS match engine
+backend/    Fastify API: auth, protest CRUD, PostGIS match engine, parking + chips
 frontend/   Vite React PWA: bilingual UI, theming, protest list, match panel
 docs/       build spec
 ```

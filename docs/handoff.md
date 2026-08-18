@@ -112,7 +112,45 @@ POST   /api/protests/match          -- public, takes current_location + destinat
 - [ ] Google Calendar link + .ics download per protest
 - [ ] PWA setup: manifest, service worker, offline caching of last-fetched protest list
 
+## Parking: legal parking + community chips (added after the initial draft)
+
+Two layers, surfaced in-app (no push notifications for v1):
+
+**Legal parking (authoritative, persistent).** Nearby legal parking is shown when
+planning a route / at the destination. Data merges an admin-curated `parking_spots`
+table with live OpenStreetMap `amenity=parking` (Overpass, cached ~5 min,
+best-effort so it never breaks the endpoint).
+
+**Community chips (ephemeral).** Logged-in users drop a "chip" at a spot with
+potential parking. Others see live chips nearby. Marking a chip taken takes it
+down for everyone; chips also auto-expire after `CHIP_TTL_MINUTES` (default 90)
+so the layer self-cleans. Live = `status = 'available'` AND not expired.
+
+Because posting a chip requires a logged-in user, public self-signup was added
+(`POST /api/auth/register`, role `public`). Reading parking/chips is public.
+
+### Schema (migration 002)
+- `parking_spots(id, name, kind, location Point 4326, capacity, notes_en/es, source, osm_id, created_by, created_at)`
+- `parking_chips(id, location Point 4326, note, status, reported_by, created_at, expires_at, taken_by, taken_at)`
+
+### Endpoints
+```
+POST   /api/auth/register           -- public self-signup (role 'public')
+GET    /api/parking?lat=&lng=&radius -- public: admin-curated + OSM merged
+POST   /api/parking                 -- admin: add a legal spot
+GET    /api/chips?lat=&lng=&radius   -- public: live chips near a point
+POST   /api/chips                   -- logged-in: drop a chip
+POST   /api/chips/:id/taken         -- logged-in: mark taken (removes it)
+DELETE /api/chips/:id               -- owner or admin
+```
+
+Chip UI works with plain device geolocation (drop where you stand; list nearby),
+so it does not require the map. Later: Web Push, rate limiting on chip creation,
+chip confirmations ("still there?") to extend life, real-time via SSE/WebSocket
+instead of polling.
+
 ## Not in scope for v1
 - Auto-translation of protest content
+- Web Push notifications for parking/chips (in-app display only for v1)
 - React Native rebuild (later phase, once traction/mobile need justifies it)
 - App store distribution (PWA install via "Add to Home Screen" for now)

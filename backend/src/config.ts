@@ -14,6 +14,12 @@ const schema = z.object({
   ORS_PROFILE: z.string().default("driving-car"),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
   MATCH_BUFFER_METERS: z.coerce.number().positive().default(200),
+  CHIP_TTL_MINUTES: z.coerce.number().int().positive().default(90),
+  PARKING_RADIUS_METERS: z.coerce.number().positive().default(800),
+  OVERPASS_URL: z
+    .string()
+    .url()
+    .default("https://overpass-api.de/api/interpreter"),
 });
 
 const parsed = schema.safeParse(process.env);

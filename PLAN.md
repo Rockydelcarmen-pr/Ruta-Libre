@@ -99,6 +99,20 @@ These are external and must be provisioned before the matching/map features work
 > `lib/routing.ts` — swap to self-hosted ORS/Valhalla by changing that file +
 > `ORS_BASE_URL`.
 
+## Phase 5b — Parking + community chips `[added after initial draft]`
+Backend done (typechecks; not yet run against a live DB). Frontend UI pairs with
+the map/geolocation work in Phase 7.
+- [x] Migration 002: `parking_spots` + `parking_chips` (Point geometry, GiST, live index)
+- [x] Config: `CHIP_TTL_MINUTES` (90), `PARKING_RADIUS_METERS` (800), `OVERPASS_URL`
+- [x] Public self-signup `POST /api/auth/register` (role `public`) — needed so people can post chips
+- [x] Legal parking: `GET /api/parking` (admin-curated DB + live OSM Overpass, cached/best-effort), `POST /api/parking` (admin)
+- [x] Chips: `POST /api/chips` (logged-in), `GET /api/chips` (public, live only), `POST /api/chips/:id/taken`, `DELETE /api/chips/:id` (owner/admin)
+- [x] TTL auto-expiry baked into the live query (no cron needed)
+- [x] Frontend types + API client (`getParking`, `getChips`, `dropChip`, `takeChip`, `deleteChip`, `registerPublic`, `login`)
+- [ ] Frontend UI: login/signup, "use my location" nearby list, drop/take chips (with Phase 7)
+- [ ] Rate limiting on chip creation (abuse guard) — TODO
+- [ ] Optional: chip confirmations ("still there?") to extend life; real-time via polling → SSE later
+
 ## Phase 6 — Frontend foundation
 - [x] Vite 7 + React + TS app
 - [x] `[spec]` PWA: `vite-plugin-pwa`, manifest, service worker, protest-list runtime cache
@@ -115,6 +129,8 @@ These are external and must be provisioned before the matching/map features work
 - [ ] Public protest list + detail views (organizers, cause, goal, links)
 - [ ] `[spec]` Approved-user route input: click points on map -> LineString -> submit
 - [ ] `[spec]` Per-protest Google Calendar link + `.ics` download
+- [ ] Legal parking + live chips layer on the map, and a nearby list at the destination
+- [ ] Login/signup screens; drop a chip at current location (geolocation); mark chips taken; poll for live updates
 - [ ] Access-key registration + login screens
 
 ## Phase 8 — PWA offline + polish
