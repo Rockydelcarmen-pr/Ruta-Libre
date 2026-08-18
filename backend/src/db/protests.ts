@@ -66,3 +66,26 @@ export async function findConflicts(
   );
   return res.rows;
 }
+
+/**
+ * A single GeoJSON polygon (union of buffered protest routes) to hand to the
+ * router's avoid-area option, so it plans a route that dodges the protest(s).
+ */
+export async function getAvoidPolygon(
+  protestIds: string[],
+  bufferMeters: number,
+): Promise<Record<string, unknown> | null> {
+  if (protestIds.length === 0) return null;
+  const res = await query<{ poly: string | null }>(
+    `
+    select ST_AsGeoJSON(
+             ST_Union(ST_Buffer(route::geography, $2)::geometry)
+           ) as poly
+    from protests
+    where id = any($1)
+  `,
+    [protestIds, bufferMeters],
+  );
+  const poly = res.rows[0]?.poly;
+  return poly ? (JSON.parse(poly) as Record<string, unknown>) : null;
+}

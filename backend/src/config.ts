@@ -9,7 +9,9 @@ const schema = z.object({
   JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters"),
   JWT_EXPIRES_IN: z.string().default("7d"),
   BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(15).default(12),
-  GOOGLE_DIRECTIONS_API_KEY: z.string().default(""),
+  ORS_API_KEY: z.string().default(""),
+  ORS_BASE_URL: z.string().url().default("https://api.openrouteservice.org"),
+  ORS_PROFILE: z.string().default("driving-car"),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
   MATCH_BUFFER_METERS: z.coerce.number().positive().default(200),
 });
@@ -31,5 +33,5 @@ export const config = {
     .map((s) => s.trim())
     .filter(Boolean),
   isProd: env.NODE_ENV === "production",
-  hasDirectionsKey: env.GOOGLE_DIRECTIONS_API_KEY.length > 0,
+  hasRoutingKey: env.ORS_API_KEY.length > 0,
 };

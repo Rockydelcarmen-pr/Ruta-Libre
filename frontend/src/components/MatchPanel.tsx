@@ -1,15 +1,15 @@
 import { useTranslation } from "react-i18next";
 
-const MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? "";
+const MAP_STYLE_URL = import.meta.env.VITE_MAP_STYLE_URL ?? "";
 
 /**
- * Route-planning panel. The map + Directions wiring is deferred until a Google
- * Maps key is configured; until then this renders the layout with a clear
+ * Route-planning panel. The MapLibre map + routing wiring is deferred until a
+ * map style URL is configured; until then this renders the layout with a clear
  * "pending" state so the rest of the app is usable.
  */
 export function MatchPanel() {
   const { t } = useTranslation();
-  const ready = MAPS_KEY.length > 0;
+  const ready = MAP_STYLE_URL.length > 0;
 
   return (
     <section className="card match-panel" aria-labelledby="match-heading">

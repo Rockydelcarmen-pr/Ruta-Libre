@@ -26,7 +26,8 @@ intentionally deferred behind the Maps key.
 - **Frontend:** React + Vite 7, PWA (`vite-plugin-pwa`), react-i18next (EN/ES)
 - **Backend:** Fastify 5 + TypeScript
 - **Database:** PostgreSQL + PostGIS
-- **Maps/Routing:** Google Maps JS SDK + Directions API (deferred until key)
+- **Routing:** OpenRouteService (OSM-based, native avoid-area; self-hostable)
+- **Map display:** MapLibre GL (deferred until a map style URL is set)
 
 ## Layout
 
@@ -55,7 +56,8 @@ npm run dev:api                   # backend on :3000
 npm run dev:web                   # frontend on :5173 (proxies /api -> :3000)
 ```
 
-The `/api/protests/match` endpoint returns a clean `503 directions_unconfigured`
-until `GOOGLE_DIRECTIONS_API_KEY` is set in `backend/.env`; the frontend map
-panel stays in its "pending" state until `VITE_GOOGLE_MAPS_API_KEY` is set in
-`frontend/.env.local`.
+The `/api/protests/match` endpoint returns a clean `503 routing_unconfigured`
+until `ORS_API_KEY` is set in `backend/.env` (free hosted key at
+openrouteservice.org, or point `ORS_BASE_URL` at a self-hosted instance); the
+frontend map panel stays in its "pending" state until `VITE_MAP_STYLE_URL` is
+set in `frontend/.env.local`.

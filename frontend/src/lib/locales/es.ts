@@ -10,7 +10,7 @@ export const es: Resources = {
   match: {
     heading: "Planifica una ruta",
     pending:
-      "El mapa y las rutas aparecerán aquí cuando se configure la clave de Google Maps.",
+      "El mapa y las rutas aparecerán aquí cuando se configure el estilo del mapa.",
     origin: "Origen",
     destination: "Destino",
     check: "Verificar ruta",

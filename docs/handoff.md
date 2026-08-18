@@ -7,7 +7,8 @@ A web app (PWA, mobile-portable later) that lets users input their current locat
 - **Frontend:** React + Vite, built as a PWA (`vite-plugin-pwa`, manifest + service worker for offline caching of last-fetched protest data)
 - **Backend:** Fastify (Node.js/TypeScript)
 - **Database:** PostgreSQL + PostGIS
-- **Maps/Routing:** Google Maps JS SDK + Directions API (`alternatives=true` for reroute options)
+- **Routing:** OpenRouteService (OSM-based; alternative routes + native `avoid_polygons`; self-hostable). Chosen over Google Directions to avoid a billing-account requirement and per-call cost. Isolated to `backend/src/lib/routing.ts`.
+- **Map display:** MapLibre GL JS with a vector-tile style (MapTiler/Stadia/Protomaps).
 - **i18n:** react-i18next (English/Spanish, toggle in settings)
 - **Theming:** CSS custom properties, light/dark mode via `data-theme` attribute, stored in localStorage
 - **Calendar export:** Google Calendar link (`calendar.google.com/calendar/render`) + downloadable `.ics` (via `ics` npm package)
@@ -52,12 +53,12 @@ Note: bilingual fields are nullable. Fall back to whichever language exists if o
 
 ## Core matching logic
 
-1. Frontend gets user's current location + destination, calls Google Directions API for the route (polyline).
-2. Sends that route to `POST /api/protests/match`.
-3. Backend runs PostGIS `ST_DWithin` (buffer ~200m) between the user's route geometry and each approved, upcoming protest's route geometry.
+1. Frontend sends the user's current location + destination to `POST /api/protests/match`.
+2. Backend calls OpenRouteService (server-side key) for the primary route plus alternatives.
+3. Backend runs PostGIS `ST_DWithin` (buffer ~200m) between the returned route geometry and each approved, upcoming protest's route geometry.
 4. If conflict(s) found:
-   - Request Directions API alternatives (`alternatives=true`), check each against the same conflict query, return the first clean one.
-   - If none are clean, compute an offset waypoint (perpendicular offset from the midpoint of the protest's route, ~300-500m) and request a new route through that waypoint as a forced detour.
+   - Check each ORS alternative against the same conflict query, return the first clean one.
+   - If none are clean, build a buffered avoid polygon from the conflicting protest routes (`ST_Buffer` + `ST_Union` in PostGIS) and re-request an ORS route with `avoid_polygons`, getting a direct avoidance route in one call.
 5. Return the clean/suggested route **and** the full protest object so the frontend can explain the reroute to the user (not just silently reroute).
 
 ## API endpoints

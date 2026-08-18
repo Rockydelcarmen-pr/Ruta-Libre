@@ -35,7 +35,6 @@ export interface LatLng {
 }
 
 export interface RouteJson {
-  polyline: string;
   geojson: LineString;
   summary: string;
   distance_meters: number;

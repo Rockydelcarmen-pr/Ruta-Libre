@@ -8,7 +8,7 @@ export const en = {
   match: {
     heading: "Plan a route",
     pending:
-      "Map and routing will appear here once the Google Maps key is configured.",
+      "Map and routing will appear here once the map style is configured.",
     origin: "Start",
     destination: "Destination",
     check: "Check route",

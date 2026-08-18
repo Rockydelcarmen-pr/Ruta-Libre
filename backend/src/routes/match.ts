@@ -1,18 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { config } from "../config.js";
-import { findConflicts, getOrgLinksFor } from "../db/protests.js";
 import {
-  DirectionsError,
-  getRoutes,
-  type DirectionsRoute,
-} from "../lib/directions.js";
-import {
-  offsetWaypoint,
-  toLineString,
-  type Coord,
-  type LineStringGeoJSON,
-} from "../lib/geo.js";
+  findConflicts,
+  getAvoidPolygon,
+  getOrgLinksFor,
+} from "../db/protests.js";
+import { getRoutes, RoutingError, type RouteResult } from "../lib/routing.js";
+import { toLineString, type Coord } from "../lib/geo.js";
 import { serializeProtest, type Row } from "../lib/serialize.js";
 import { normalizeLang, type Lang } from "../lib/i18n.js";
 import { googleCalendarLink } from "../lib/calendar.js";
@@ -27,9 +22,8 @@ const matchSchema = z.object({
   lang: z.enum(["en", "es"]).optional(),
 });
 
-function routeToJson(r: DirectionsRoute) {
+function routeToJson(r: RouteResult) {
   return {
-    polyline: r.polyline,
     geojson: toLineString(r.coordinates),
     summary: r.summary,
     distance_meters: r.distanceMeters,
@@ -78,26 +72,22 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
     const { origin, destination } = parsed.data;
     const lang: Lang = normalizeLang(parsed.data.lang);
 
-    let routes: DirectionsRoute[];
+    let routes: RouteResult[];
     try {
       routes = await getRoutes(origin, destination, { alternatives: true });
     } catch (err) {
-      if (err instanceof DirectionsError) {
-        const unconfigured = err.code === "directions_unconfigured";
-        return reply.code(unconfigured ? 503 : 502).send({
-          error: err.code,
-          message: err.message,
-        });
+      if (err instanceof RoutingError) {
+        const unconfigured = err.code === "routing_unconfigured";
+        return reply
+          .code(unconfigured ? 503 : 502)
+          .send({ error: err.code, message: err.message });
       }
       throw err;
     }
 
-    const primary = routes[0];
-    if (!primary) {
-      return reply.code(404).send({ error: "no_route_found" });
-    }
-
+    const primary = routes[0]!; // getRoutes throws if there are no routes.
     const conflicts = await conflictsForCoords(primary.coordinates);
+
     if (conflicts.length === 0) {
       return reply.send({
         conflict: false,
@@ -109,8 +99,9 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
-    // Try existing alternatives first, then a forced perpendicular detour.
-    let suggested: DirectionsRoute | null = null;
+    // Prefer a clean existing alternative; otherwise ask the router to avoid the
+    // conflicting protest area(s) directly.
+    let suggested: RouteResult | null = null;
     for (const alt of routes.slice(1)) {
       if ((await conflictsForCoords(alt.coordinates)).length === 0) {
         suggested = alt;
@@ -118,27 +109,20 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
       }
     }
     if (!suggested) {
-      const first = conflicts[0]!;
-      const conflictGeo = (
-        typeof first.route_geojson === "string"
-          ? JSON.parse(first.route_geojson)
-          : first.route_geojson
-      ) as LineStringGeoJSON;
-      try {
-        const waypoint = offsetWaypoint(conflictGeo.coordinates);
-        const detours = await getRoutes(origin, destination, {
-          waypoints: [waypoint],
-          alternatives: true,
-        });
-        for (const dr of detours) {
-          if ((await conflictsForCoords(dr.coordinates)).length === 0) {
-            suggested = dr;
-            break;
-          }
+      const avoid = await getAvoidPolygon(
+        conflicts.map((c) => c.id as string),
+        config.MATCH_BUFFER_METERS,
+      );
+      if (avoid) {
+        try {
+          const detours = await getRoutes(origin, destination, {
+            avoidPolygon: avoid,
+          });
+          suggested = detours[0] ?? null;
+        } catch (err) {
+          if (!(err instanceof RoutingError)) throw err;
+          // No avoiding route available; leave suggested null.
         }
-        if (!suggested && detours[0]) suggested = detours[0];
-      } catch {
-        // Fall through with no clean suggestion.
       }
     }
 

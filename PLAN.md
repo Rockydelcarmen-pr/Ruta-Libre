@@ -29,9 +29,15 @@ React Native port reuses the core without a rewrite.
 
 ## Prerequisites (you supply)
 These are external and must be provisioned before the matching/map features work:
-- [ ] **Google Cloud project** with Maps JavaScript API + Directions API enabled, and an API key (frontend key restricted by HTTP referrer; a separate server key for Directions calls made from the backend).
+- [ ] **OpenRouteService key** (free hosted tier at openrouteservice.org) set as `ORS_API_KEY`, OR a self-hosted ORS instance pointed to by `ORS_BASE_URL`. Used server-side for routing + avoid-area.
+- [ ] **MapLibre map style URL** for the frontend (`VITE_MAP_STYLE_URL`) from a tile provider (MapTiler/Stadia free tier) or a self-hosted/Protomaps style.
 - [ ] **PostgreSQL 15+ with PostGIS** (local Docker for dev, managed instance for prod). Decide host: local Docker vs. Supabase/Neon (note: confirm PostGIS availability on the managed option chosen).
 - [ ] Decide **JWT secret** management and where env vars live (`.env`, never committed).
+
+> Maps/routing provider: switched from Google Maps Platform to OpenRouteService
+> (routing) + MapLibre (display) to avoid Google's billing-account requirement
+> and per-call cost, and to use ORS's native avoid-polygon. All OSM-based and
+> swappable; the backend only touches routing in `lib/routing.ts`.
 
 ---
 
@@ -79,17 +85,19 @@ These are external and must be provisioned before the matching/map features work
 - [x] `GET /api/protests/:id/calendar.ics` — downloadable per-protest event
 
 ## Phase 5 — Match endpoint + geo logic `[spec: core matching]`
-- [x] `POST /api/protests/match` — accepts origin + destination (server calls Directions)
+- [x] `POST /api/protests/match` — accepts origin + destination (server calls ORS)
 - [x] PostGIS `ST_DWithin` conflict query (geography buffer) vs. approved, upcoming protests
-- [x] Directions API `alternatives=true`, re-run conflict query, return first clean route
-- [x] Fallback: perpendicular offset waypoint forced detour
+- [x] ORS alternative routes, re-run conflict query, return first clean route
+- [x] Fallback: ORS `avoid_polygons` with the buffered protest area (from PostGIS `ST_Buffer`/`ST_Union`) — a direct avoidance route in one call
 - [x] Response includes full protest object + suggested route + calendar links (explains, no silent reroute)
-- [x] `[spec]` Calendar links: Google render URL + `.ics` via `ics` package
-- [ ] Rate limiting / abuse protection on `/match` (hits paid Directions API) — TODO
+- [x] `[spec]` Calendar links: Google Calendar render URL (free, no API) + `.ics` via `ics` package
+- [ ] Rate limiting / abuse protection on `/match` (guards the ORS free-tier quota) — TODO
 
-> Design note: the backend calls the Directions API itself (server key) rather
-> than trusting a client-sent polyline. This centralizes the paid API and the
-> key server-side. Revisit if we want the client to pass its own chosen route.
+> Design note: the backend calls OpenRouteService itself (server key) rather than
+> trusting a client-sent polyline. This centralizes the routing key server-side
+> and lets us hand ORS a PostGIS-derived avoid polygon. Provider is isolated to
+> `lib/routing.ts` — swap to self-hosted ORS/Valhalla by changing that file +
+> `ORS_BASE_URL`.
 
 ## Phase 6 — Frontend foundation
 - [x] Vite 7 + React + TS app
@@ -98,11 +106,11 @@ These are external and must be provisioned before the matching/map features work
 - [x] `[spec]` Theming: CSS custom properties, `data-theme` light/dark, persisted in localStorage
 - [x] API client + typed models in `src/lib` (framework-agnostic)
 - [x] Protest list + card (bilingual, .ics download link)
-- [x] Match panel shell (activates when `VITE_GOOGLE_MAPS_API_KEY` is set)
+- [x] Match panel shell (activates when `VITE_MAP_STYLE_URL` is set)
 - [ ] Router (single view for now; add when detail/auth pages land)
 
 ## Phase 7 — Frontend features
-- [ ] Google Maps JS SDK integration, location + destination input
+- [ ] MapLibre GL integration (map style from `VITE_MAP_STYLE_URL`), location + destination input
 - [ ] Match flow UI: show conflict explanation, protest context, suggested route
 - [ ] Public protest list + detail views (organizers, cause, goal, links)
 - [ ] `[spec]` Approved-user route input: click points on map -> LineString -> submit

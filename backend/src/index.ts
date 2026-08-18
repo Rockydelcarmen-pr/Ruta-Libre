@@ -35,7 +35,7 @@ async function build() {
     return {
       ok: true,
       db,
-      directions_configured: config.hasDirectionsKey,
+      routing_configured: config.hasRoutingKey,
     };
   });
 
