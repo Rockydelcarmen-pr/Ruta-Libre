@@ -1,0 +1,198 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Monorepo and tooling scaffolding",
+        "description": "npm workspaces for backend and frontend, env examples, dev Postgres via docker-compose.",
+        "details": "Root package.json with workspaces (backend, frontend). .env.example for both. docker-compose.yml with postgis/postgis image. Dev scripts: dev:api, dev:web, db:up/down/migrate/seed.",
+        "testStrategy": "npm install resolves both workspaces; docker-compose config validates.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Backend foundation (Fastify + TypeScript)",
+        "description": "App skeleton, zod-validated config, Postgres pool, SQL migration runner, error handling, health check.",
+        "details": "Fastify 5, strict tsconfig (ESM NodeNext). config.ts validates env. db/pool.ts. db/migrate.ts runs SQL files with a _migrations table. /health reports db + routing status.",
+        "testStrategy": "tsc --noEmit clean; /health returns ok.",
+        "priority": "high",
+        "dependencies": [1],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Data model and PostGIS schema",
+        "description": "Migrations for users, access_keys, organizations, protests (LineString route), parking, device_tokens.",
+        "details": "001_init.sql (users approved/admin only, access_keys, orgs, protests with geometry(LineString,4326) + GiST, protest_organizations). 002_parking.sql (device_tokens, parking_spots, parking_chips as Point geometry with GiST + live index). Bilingual EN/ES nullable fields. Seed script with sample San Juan protests.",
+        "testStrategy": "Migrations apply cleanly on a fresh PostGIS db; seed inserts admin + sample protests.",
+        "priority": "high",
+        "dependencies": [2],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Auth: access keys, login, JWT roles, anonymous device tokens",
+        "description": "Organizer registration via single-use access key, login, JWT role guard, and anonymous per-device tokens for pins.",
+        "details": "register-with-key redeems sha256-hashed key to role approved. login with bcrypt. @fastify/jwt with requireRole. Public has NO account; anonymous device tokens (POST /api/devices, x-device-token header) attribute community pins without email/password.",
+        "testStrategy": "Register + login issue JWTs; device token mint + resolve works; role guard blocks unauthorized writes.",
+        "priority": "high",
+        "dependencies": [3],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Protest CRUD and calendar export",
+        "description": "Create/patch (organizer/admin), public list and detail, per-protest .ics download.",
+        "details": "POST/PATCH /api/protests (transactional, orgs, bilingual fields). GET list (active/upcoming) and detail with organizers + links. GET /api/protests/:id/calendar.ics plus Google Calendar render link.",
+        "testStrategy": "CRUD round-trips; list/detail serialize bilingual with fallback; .ics validates.",
+        "priority": "high",
+        "dependencies": [4],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Route-conflict match engine",
+        "description": "POST /api/protests/match: OpenRouteService routing plus PostGIS conflict detection and avoid-polygon reroute.",
+        "details": "Server calls ORS for primary + alternative routes. ST_DWithin conflict query against approved upcoming protests. If all alternatives conflict, build ST_Buffer + ST_Union avoid polygon and re-request via ORS avoid_polygons. Returns full protest context + suggested route + calendar links. Provider isolated to lib/routing.ts.",
+        "testStrategy": "Given a route crossing a seeded protest, returns conflict + a clean suggested route.",
+        "priority": "medium",
+        "dependencies": [5],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Legal parking, community pins, abuse guards",
+        "description": "Merged legal parking (curated + OSM), ephemeral community pins, rate limiting, and coarse location presence check.",
+        "details": "GET /api/parking merges admin-curated spots with live OSM Overpass (cached, best-effort). Pins: POST/GET/taken/delete keyed on device token, TTL auto-expiry in query. Rate limiting per device + per IP. Coarse IP-vs-coordinates presence check via local geoip-lite (fail-open, no third-party calls). Formerly called chips; user-facing name is Pins / Marcadores.",
+        "testStrategy": "Pins drop/take/expire correctly; rate limit returns 429; cross-continent IP is rejected, localhost fails open.",
+        "priority": "medium",
+        "dependencies": [4],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Frontend foundation (Vite React PWA shell)",
+        "description": "Bilingual PWA shell with theming, typed API client, and the protest list.",
+        "details": "Vite 7 + React + TS. vite-plugin-pwa (manifest, service worker, protest-list runtime cache). react-i18next EN/ES. CSS custom-property theming with data-theme light/dark. Framework-agnostic src/lib (api client, types) for a future React Native port. Protest list + card.",
+        "testStrategy": "vite build clean; language + theme toggles work; protest list renders.",
+        "priority": "medium",
+        "dependencies": [1],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Provision infrastructure and keys",
+        "description": "Stand up Postgres+PostGIS, get an OpenRouteService key, and a MapLibre map style URL.",
+        "details": "Local Docker PostGIS for dev (or managed: Supabase/Neon, confirm PostGIS). Free ORS hosted key set as ORS_API_KEY, or self-hosted via ORS_BASE_URL. MapLibre vector style URL (MapTiler/Stadia/Protomaps) for VITE_MAP_STYLE_URL. Decide JWT secret handling.",
+        "testStrategy": "docker compose up starts PostGIS; ORS key returns a route; map style URL loads tiles.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Run and verify the backend end-to-end",
+        "description": "Migrate, seed, and hit every endpoint against a live PostGIS instance.",
+        "details": "npm run db:up, db:migrate, db:seed. Verify auth, protest CRUD, /match (with ORS key), parking, pins (device token, rate limit, presence). This is the first real runtime check; the backend currently only typechecks.",
+        "testStrategy": "All endpoints return expected shapes against live DB; match returns a real reroute; pins expire.",
+        "priority": "high",
+        "dependencies": [9],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Discovery-first frontend: marches feed, detail, RSVP",
+        "description": "Build the participation-forward core: marches feed as home, protest detail, and I'm going / share / add-to-calendar.",
+        "details": "App emphasis is finding and joining protests; routing/avoidance is secondary. Marches feed is the default screen. Protest detail leads with RSVP (I'm going + going count), share, add-to-calendar, then cause/goal/organizers/links. Bilingual EN/ES, light/dark, no em dashes in copy. Matches the approved Ruta Libre mockup.",
+        "testStrategy": "Feed lists seeded protests; detail RSVP toggles; calendar + share work; both languages and themes render.",
+        "priority": "high",
+        "dependencies": [8, 10],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "MapLibre map and route/match UI (secondary)",
+        "description": "Getting-there flow: map, origin/destination input, and the conflict + reroute experience.",
+        "details": "MapLibre GL with VITE_MAP_STYLE_URL. Current-location + destination input. Show conflict explanation (join or route around), protest context, suggested route on the map. Framed as a secondary utility, not the headline.",
+        "testStrategy": "Entering a route that crosses a protest shows the conflict UI and a drawn alternate route.",
+        "priority": "medium",
+        "dependencies": [9, 11],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Parking and pins UI (geolocation)",
+        "description": "Nearby legal parking list plus drop/take community pins via device geolocation.",
+        "details": "Use my location -> nearby legal parking + live pins. Drop a pin at current GPS; mark taken (removes for everyone); pins expire in 90 min. First-run anonymous device-token bootstrap (POST /api/devices, stored on device). Poll for live updates. Works without the map.",
+        "testStrategy": "Drop/take/expire round-trips against the live backend; device token persists across reloads.",
+        "priority": "medium",
+        "dependencies": [10, 11],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "First-run disclosure modal",
+        "description": "Bilingual one-woman-project disclosure shown once on first open.",
+        "details": "Modal on first launch: this is a one-woman project, info comes from organizations and may lag, refer to official announcements, still in development. EN/ES with its own language toggle. Remembered per device so it does not nag returning users. Copy already drafted in the mockup.",
+        "testStrategy": "Shows on first visit, dismisses with I understand, does not reappear after acknowledgement.",
+        "priority": "low",
+        "dependencies": [11],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Organizer registration and login screens",
+        "description": "Access-key registration and login UI for organizers (the only real accounts).",
+        "details": "Screens for register-with-key and login. Only organizers/admins have accounts; the public never signs up. Store JWT, gate protest create/patch behind it. Keep this flow separate and low-profile relative to the public discovery experience.",
+        "testStrategy": "Valid access key registers an organizer; login persists a session; protected actions require it.",
+        "priority": "low",
+        "dependencies": [11],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "PWA offline and polish",
+        "description": "Offline caching of last-fetched protests, install prompt, loading/empty/error states, accessibility pass.",
+        "details": "Service worker + storage to keep the last protest list available offline. Add to Home Screen affordance. Consistent loading, empty, and error states. Accessibility and basic unit tests for match logic and auth.",
+        "testStrategy": "App loads last protests offline; installable; a11y checks pass; core unit tests green.",
+        "priority": "low",
+        "dependencies": [11, 12, 13],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Deploy",
+        "description": "Host backend + managed Postgres/PostGIS, static-host the frontend, secrets, CORS, rate limiting, CI.",
+        "details": "Backend hosting with managed PostGIS. Frontend static host (Vercel/Netlify) with env-injected map key. Production CORS, rate limiting on public endpoints, secrets management, and CI (build + test). Move in-memory rate limiter to a shared store if running more than one instance.",
+        "testStrategy": "Public URL serves the app; endpoints work in prod; CI runs build + tests on push.",
+        "priority": "low",
+        "dependencies": [10, 11, 12, 13, 16],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2026-08-20T00:00:00Z",
+      "updated": "2026-08-20T00:00:00Z",
+      "description": "protest-tracker (Ruta Libre): find and join protests in San Juan, with route-conflict warnings and community parking pins. Backend built and typechecked; remaining work is live verification and the discovery-first frontend."
+    }
+  }
+}
