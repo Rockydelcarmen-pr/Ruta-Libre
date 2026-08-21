@@ -13,9 +13,25 @@ const schema = z.object({
   ORS_BASE_URL: z.string().url().default("https://api.openrouteservice.org"),
   ORS_PROFILE: z.string().default("driving-car"),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
+  // Set to the number of trusted proxy hops (or "true") in prod so req.ip is the
+  // real client IP from X-Forwarded-For, not the load balancer. Leave false locally.
+  TRUST_PROXY: z.string().default("false"),
   MATCH_BUFFER_METERS: z.coerce.number().positive().default(200),
   CHIP_TTL_MINUTES: z.coerce.number().int().positive().default(90),
   PARKING_RADIUS_METERS: z.coerce.number().positive().default(800),
+  // Abuse guards (in-memory, per-process; use a shared store behind >1 instance).
+  RATE_WINDOW_MINUTES: z.coerce.number().positive().default(60),
+  CHIP_RATE_MAX_PER_DEVICE: z.coerce.number().int().positive().default(6),
+  CHIP_RATE_MAX_PER_IP: z.coerce.number().int().positive().default(12),
+  DEVICE_RATE_MAX_PER_IP: z.coerce.number().int().positive().default(8),
+  // Coarse presence check: reject a chip if the request IP geolocates more than
+  // this many km from the claimed spot. Generous + fail-open by design (see
+  // lib/presence.ts). Disable with PRESENCE_CHECK_ENABLED=false.
+  PRESENCE_CHECK_ENABLED: z
+    .string()
+    .default("true")
+    .transform((v) => v !== "false"),
+  PRESENCE_MAX_KM: z.coerce.number().positive().default(500),
   OVERPASS_URL: z
     .string()
     .url()
@@ -33,6 +49,13 @@ if (!parsed.success) {
 
 const env = parsed.data;
 
+function parseTrustProxy(v: string): boolean | number {
+  if (v === "true") return true;
+  if (v === "false") return false;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : false;
+}
+
 export const config = {
   ...env,
   corsOrigins: env.CORS_ORIGINS.split(",")
@@ -40,4 +63,5 @@ export const config = {
     .filter(Boolean),
   isProd: env.NODE_ENV === "production",
   hasRoutingKey: env.ORS_API_KEY.length > 0,
+  trustProxy: parseTrustProxy(env.TRUST_PROXY),
 };

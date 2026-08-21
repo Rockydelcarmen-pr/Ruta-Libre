@@ -11,9 +11,24 @@ happening (organizers, cause, external links, add-to-calendar) so people can
 choose to reroute, join, or plan around it with full information.
 
 It also helps with the practical fallout: nearby **legal parking** (admin-curated
-+ OpenStreetMap) is surfaced at the destination, and logged-in users can share
-ephemeral parking **"chips"** (drop a spot with potential parking; others mark it
-taken, which takes it down; chips auto-expire).
++ OpenStreetMap) is surfaced at the destination, and anyone can share ephemeral
+parking **"chips"** (drop a spot with potential parking; others mark it taken,
+which takes it down; chips auto-expire).
+
+**No accounts for the public.** Looking up routes, protests, and parking needs no
+login. Dropping a chip uses an anonymous **device token** (minted on first use,
+only a hash stored, no email/password) — deliberate for a protest app, so there
+are no user passwords to leak and nothing links a person to what they looked up.
+The only real accounts are **organizers**, who register with an access key and
+log in so their protest uploads are trustworthy.
+
+Chip drops are **rate-limited** (per device and per IP) and pass a **coarse
+presence check** — the request IP is cross-checked against the claimed spot using
+a *local* geo-IP database (no third-party calls, nothing stored), so someone on
+another continent can't plant a spot in San Juan. A browser's GPS can't be
+cryptographically proven, so this raises the cost of spoofing rather than making
+it impossible; true presence proof would need a native app. Geo-IP data is
+MaxMind GeoLite2 (via `geoip-lite`), CC BY-SA 4.0.
 
 ## Status
 

@@ -16,18 +16,30 @@ create table parking_spots (
 
 create index parking_spots_gix on parking_spots using gist (location);
 
+-- Anonymous per-device identities. Community parking chips are attributed to a
+-- device token, never to an email/password account: on first use the app mints a
+-- token here (only the sha256 hash is stored) and keeps the plaintext on-device.
+-- This deliberately holds no personal data, so there are no passwords to leak and
+-- nothing that links a person to the protests/spots they looked at.
+create table device_tokens (
+  id uuid primary key default gen_random_uuid(),
+  token_hash text unique not null,
+  created_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now()
+);
+
 -- Ephemeral, community-reported parking "chips". A chip is live while
 -- status = 'available' and expires_at > now(). Marking it taken (or letting it
--- expire) removes it from the live layer.
+-- expire) removes it from the live layer. Attribution is to an anonymous device.
 create table parking_chips (
   id uuid primary key default gen_random_uuid(),
   location geometry(Point, 4326) not null,
   note text,
   status text not null default 'available' check (status in ('available', 'taken')),
-  reported_by uuid references users(id) on delete set null,
+  reported_by uuid references device_tokens(id) on delete set null,
   created_at timestamptz not null default now(),
   expires_at timestamptz not null,
-  taken_by uuid references users(id) on delete set null,
+  taken_by uuid references device_tokens(id) on delete set null,
   taken_at timestamptz
 );
 

@@ -73,7 +73,8 @@ These are external and must be provisioned before the matching/map features work
 ## Phase 3 — Auth `[spec: access-key gating, JWT roles]`
 - [x] `POST /api/auth/register-with-key` — redeem hashed (sha256) single-use key
 - [x] `POST /api/auth/login` — bcrypt verify, issue JWT
-- [x] JWT plugin + role guard (`public` | `approved` | `admin`)
+- [x] JWT plugin + role guard (`approved` | `admin`; accounts are organizers/admins only)
+- [x] Anonymous device-token auth (`x-device-token`) for public chip actions — no user accounts for the public
 - [x] Access-key generation + hashing utility (used by seed; admin endpoint TBD)
 
 ## Phase 4 — Protest CRUD `[spec: write access]`
@@ -102,15 +103,17 @@ These are external and must be provisioned before the matching/map features work
 ## Phase 5b — Parking + community chips `[added after initial draft]`
 Backend done (typechecks; not yet run against a live DB). Frontend UI pairs with
 the map/geolocation work in Phase 7.
-- [x] Migration 002: `parking_spots` + `parking_chips` (Point geometry, GiST, live index)
+- [x] Migration 002: `device_tokens` + `parking_spots` + `parking_chips` (Point geometry, GiST, live index)
 - [x] Config: `CHIP_TTL_MINUTES` (90), `PARKING_RADIUS_METERS` (800), `OVERPASS_URL`
-- [x] Public self-signup `POST /api/auth/register` (role `public`) — needed so people can post chips
+- [x] Anonymous device identity `POST /api/devices` (sha256-hashed token, no PII) — the public posts chips with no account
 - [x] Legal parking: `GET /api/parking` (admin-curated DB + live OSM Overpass, cached/best-effort), `POST /api/parking` (admin)
-- [x] Chips: `POST /api/chips` (logged-in), `GET /api/chips` (public, live only), `POST /api/chips/:id/taken`, `DELETE /api/chips/:id` (owner/admin)
+- [x] Chips: `POST /api/chips` (device token), `GET /api/chips` (public, live only), `POST /api/chips/:id/taken` (device token), `DELETE /api/chips/:id` (owning device)
 - [x] TTL auto-expiry baked into the live query (no cron needed)
-- [x] Frontend types + API client (`getParking`, `getChips`, `dropChip`, `takeChip`, `deleteChip`, `registerPublic`, `login`)
-- [ ] Frontend UI: login/signup, "use my location" nearby list, drop/take chips (with Phase 7)
-- [ ] Rate limiting on chip creation (abuse guard) — TODO
+- [x] Frontend types + API client (`getParking`, `getChips`, `createDevice`, `dropChip`, `takeChip`, `deleteChip`, `login`)
+- [x] Rate limiting on chip drops (per device + per IP) and device minting (per IP) — in-memory sliding window (`lib/rateLimit.ts`), tunable via env; `trustProxy` wired so `req.ip` is the real client
+- [x] Coarse presence check (`lib/presence.ts`, local `geoip-lite` DB, no third-party calls, stateless): rejects a chip when the request IP is >`PRESENCE_MAX_KM` from the claimed spot; fail-open on unknown IPs. Catches cross-continent spoofing; cannot beat same-region VPN or US↔PR carrier ambiguity (documented honest ceiling → native attestation later)
+- [ ] Frontend UI: "use my location" nearby list, drop/take chips via geolocation, first-run device-token bootstrap (with Phase 7)
+- [ ] Corroboration model (2nd nearby device confirms a chip) — stronger-than-IP presence signal, still no location trail — TODO
 - [ ] Optional: chip confirmations ("still there?") to extend life; real-time via polling → SSE later
 
 ## Phase 6 — Frontend foundation
@@ -130,8 +133,8 @@ the map/geolocation work in Phase 7.
 - [ ] `[spec]` Approved-user route input: click points on map -> LineString -> submit
 - [ ] `[spec]` Per-protest Google Calendar link + `.ics` download
 - [ ] Legal parking + live chips layer on the map, and a nearby list at the destination
-- [ ] Login/signup screens; drop a chip at current location (geolocation); mark chips taken; poll for live updates
-- [ ] Access-key registration + login screens
+- [ ] Drop a chip at current location (geolocation) via anonymous device token; mark chips taken; poll for live updates
+- [ ] Organizer access-key registration + login screens (the only accounts)
 
 ## Phase 8 — PWA offline + polish
 - [ ] `[spec]` Offline caching of last-fetched protest list (service worker + IndexedDB/localStorage)

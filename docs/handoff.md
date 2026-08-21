@@ -23,8 +23,9 @@ Keep business logic decoupled from UI so this can later port to React Native wit
 
 ```sql
 users
-  id, email, password_hash, role ('public' | 'approved' | 'admin'),
+  id, email, password_hash, role ('approved' | 'admin'),
   preferred_language ('en' | 'es'), created_at
+  -- accounts are organizers/admins only; the public never signs up
 
 access_keys
   id, key_hash, role_grant ('approved'), used_by (nullable),
@@ -121,33 +122,65 @@ planning a route / at the destination. Data merges an admin-curated `parking_spo
 table with live OpenStreetMap `amenity=parking` (Overpass, cached ~5 min,
 best-effort so it never breaks the endpoint).
 
-**Community chips (ephemeral).** Logged-in users drop a "chip" at a spot with
-potential parking. Others see live chips nearby. Marking a chip taken takes it
-down for everyone; chips also auto-expire after `CHIP_TTL_MINUTES` (default 90)
-so the layer self-cleans. Live = `status = 'available'` AND not expired.
+**Community chips (ephemeral).** Users drop a "chip" at a spot with potential
+parking. Others see live chips nearby. Marking a chip taken takes it down for
+everyone; chips also auto-expire after `CHIP_TTL_MINUTES` (default 90) so the
+layer self-cleans. Live = `status = 'available'` AND not expired.
 
-Because posting a chip requires a logged-in user, public self-signup was added
-(`POST /api/auth/register`, role `public`). Reading parking/chips is public.
+**No accounts for the public.** Dropping a chip does *not* require an email or
+password. On first use the app mints an anonymous **device token**
+(`POST /api/devices`); only its sha256 hash is stored, and it carries no personal
+data. Chip actions authenticate with that token via the `x-device-token` header,
+so "owner" just means "same device." This is deliberate for a protest app: there
+are no user passwords to leak, and nothing links a person to the protests or
+spots they looked at. The only real accounts are **organizers** (access-key
+registration + login), who *want* to be identifiable so their uploads are
+trustworthy. Reading parking/chips is fully public.
 
 ### Schema (migration 002)
+- `device_tokens(id, token_hash, created_at, last_seen_at)` — anonymous per-device identities
 - `parking_spots(id, name, kind, location Point 4326, capacity, notes_en/es, source, osm_id, created_by, created_at)`
-- `parking_chips(id, location Point 4326, note, status, reported_by, created_at, expires_at, taken_by, taken_at)`
+- `parking_chips(id, location Point 4326, note, status, reported_by → device_tokens, created_at, expires_at, taken_by → device_tokens, taken_at)`
 
 ### Endpoints
 ```
-POST   /api/auth/register           -- public self-signup (role 'public')
+POST   /api/devices                  -- mint an anonymous device token (no PII)
 GET    /api/parking?lat=&lng=&radius -- public: admin-curated + OSM merged
 POST   /api/parking                 -- admin: add a legal spot
 GET    /api/chips?lat=&lng=&radius   -- public: live chips near a point
-POST   /api/chips                   -- logged-in: drop a chip
-POST   /api/chips/:id/taken         -- logged-in: mark taken (removes it)
-DELETE /api/chips/:id               -- owner or admin
+POST   /api/chips                   -- device token: drop a chip
+POST   /api/chips/:id/taken         -- device token: mark taken (removes it)
+DELETE /api/chips/:id               -- device token: delete your own chip
 ```
 
-Chip UI works with plain device geolocation (drop where you stand; list nearby),
-so it does not require the map. Later: Web Push, rate limiting on chip creation,
-chip confirmations ("still there?") to extend life, real-time via SSE/WebSocket
-instead of polling.
+Chip actions send `x-device-token: <token>`. A chip is dropped AT the reporter's
+current location (lat/lng are the device's own GPS reading — there is no separate
+"spot over there" field), so you can only plant a chip where you claim to be. The
+UI works with plain device geolocation (drop where you stand; list nearby), so it
+does not require the map.
+
+### Abuse guards + presence (added)
+- **Rate limiting** (`lib/rateLimit.ts`, in-memory sliding window): chip drops
+  capped per device (`CHIP_RATE_MAX_PER_DEVICE`) and per IP (`CHIP_RATE_MAX_PER_IP`);
+  device-token minting capped per IP (`DEVICE_RATE_MAX_PER_IP`); window
+  `RATE_WINDOW_MINUTES`. Per-process — move to Redis behind >1 instance. Requires
+  `TRUST_PROXY` set correctly in prod so `req.ip` is the real client.
+- **Coarse presence check** (`lib/presence.ts`, `geoip-lite` local DB, no
+  third-party calls, nothing stored): rejects a chip when the request IP
+  geolocates more than `PRESENCE_MAX_KM` (default 500) from the claimed spot.
+  Fail-open on unknown/localhost IPs so real users are never blocked by a bad
+  lookup. **Honest ceiling:** a browser's GPS is not cryptographically
+  verifiable. This reliably catches cross-continent spoofing (verified: a US or
+  Lithuania IP claiming San Juan is rejected) but cannot distinguish a spoofer in
+  the US faking PR from a real PR user routed through the US mainland — same IP
+  geography. True presence proof needs native attestation (App Attest / Play
+  Integrity), i.e. the React Native rebuild. A corroboration model
+  (second nearby device confirms a chip) is the next step short of that.
+
+`geoip-lite` bundles MaxMind GeoLite2 data (CC BY-SA 4.0 — attribution in README).
+
+Later: Web Push, chip confirmations ("still there?") to extend life, corroboration
+model, real-time via SSE/WebSocket instead of polling.
 
 ## Not in scope for v1
 - Auto-translation of protest content

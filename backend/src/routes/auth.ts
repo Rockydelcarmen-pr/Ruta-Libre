@@ -12,12 +12,6 @@ const registerSchema = z.object({
   preferred_language: z.enum(["en", "es"]).optional(),
 });
 
-const publicRegisterSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  preferred_language: z.enum(["en", "es"]).optional(),
-});
-
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -76,36 +70,6 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       [user.id, key.id],
     );
 
-    const token = await reply.jwtSign({ sub: user.id, role: user.role });
-    return reply.code(201).send({
-      token,
-      user: { id: user.id, email, role: user.role },
-    });
-  });
-
-  // Public self-signup: creates a 'public' user (can post/take parking chips).
-  app.post("/api/auth/register", async (req, reply) => {
-    const parsed = publicRegisterSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return reply
-        .code(400)
-        .send({ error: "invalid_input", details: parsed.error.flatten() });
-    }
-    const { email, password, preferred_language } = parsed.data;
-
-    const existing = await query("select id from users where email = $1", [
-      email,
-    ]);
-    if (existing.rows[0]) return reply.code(409).send({ error: "email_taken" });
-
-    const passwordHash = await hashPassword(password);
-    const userRes = await query<{ id: string; role: Role }>(
-      `insert into users (email, password_hash, role, preferred_language)
-       values ($1, $2, 'public', $3)
-       returning id, role`,
-      [email, passwordHash, preferred_language ?? "en"],
-    );
-    const user = userRes.rows[0]!;
     const token = await reply.jwtSign({ sub: user.id, role: user.role });
     return reply.code(201).send({
       token,

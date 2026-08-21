@@ -2,12 +2,15 @@
 create extension if not exists postgis;
 create extension if not exists pgcrypto; -- gen_random_uuid()
 
--- Users
+-- Users. Only identifiable actors have accounts: organizers (role 'approved',
+-- redeemed via a single-use access key) and admins. The public never signs up;
+-- routing/parking/protest lookups are all anonymous, and community parking chips
+-- are attributed to an anonymous per-device token (see device_tokens), not a user.
 create table users (
   id uuid primary key default gen_random_uuid(),
   email text unique not null,
   password_hash text not null,
-  role text not null default 'public' check (role in ('public', 'approved', 'admin')),
+  role text not null default 'approved' check (role in ('approved', 'admin')),
   preferred_language text not null default 'en' check (preferred_language in ('en', 'es')),
   created_at timestamptz not null default now()
 );

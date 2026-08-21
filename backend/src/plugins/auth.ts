@@ -5,8 +5,14 @@ import type {
 } from "fastify";
 import fastifyJwt from "@fastify/jwt";
 import { config } from "../config.js";
+import { resolveDeviceId } from "../db/devices.js";
 
-export type Role = "public" | "approved" | "admin";
+// Only identifiable actors carry a role: organizers ('approved') and admins.
+// The public has no account; anonymous chip actions authenticate with a device
+// token instead (see authenticateDevice), not a JWT.
+export type Role = "approved" | "admin";
+
+const DEVICE_TOKEN_HEADER = "x-device-token";
 
 declare module "@fastify/jwt" {
   interface FastifyJWT {
@@ -21,6 +27,14 @@ declare module "fastify" {
     requireRole: (
       roles: Role[],
     ) => (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authenticateDevice: (
+      req: FastifyRequest,
+      reply: FastifyReply,
+    ) => Promise<void>;
+  }
+  interface FastifyRequest {
+    /** Set by authenticateDevice: the anonymous device id for this request. */
+    deviceId?: string;
   }
 }
 
@@ -54,4 +68,25 @@ export async function registerAuth(app: FastifyInstance): Promise<void> {
       }
     };
   });
+
+  // Anonymous device auth: reads the x-device-token header and resolves it to a
+  // device id. Used by community-chip actions, which need only "same device",
+  // never a personal account.
+  app.decorate(
+    "authenticateDevice",
+    async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
+      const header = req.headers[DEVICE_TOKEN_HEADER];
+      const token = Array.isArray(header) ? header[0] : header;
+      if (!token) {
+        await reply.code(401).send({ error: "missing_device_token" });
+        return;
+      }
+      const deviceId = await resolveDeviceId(token);
+      if (!deviceId) {
+        await reply.code(401).send({ error: "invalid_device_token" });
+        return;
+      }
+      req.deviceId = deviceId;
+    },
+  );
 }

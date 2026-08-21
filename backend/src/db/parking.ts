@@ -103,7 +103,7 @@ export async function insertChip(input: {
   lat: number;
   lng: number;
   note: string | null;
-  reportedBy: string;
+  reportedBy: string; // device_tokens.id
   ttlMinutes: number;
 }): Promise<ChipRow> {
   const res = await query<ChipRow>(
@@ -122,7 +122,7 @@ export async function insertChip(input: {
 /** Mark a live chip taken. Returns false if it does not exist or is already gone. */
 export async function markChipTaken(
   id: string,
-  userId: string,
+  deviceId: string,
 ): Promise<boolean> {
   const res = await query(
     `
@@ -130,22 +130,19 @@ export async function markChipTaken(
     set status = 'taken', taken_by = $2, taken_at = now()
     where id = $1 and status = 'available'
   `,
-    [id, userId],
+    [id, deviceId],
   );
   return (res.rowCount ?? 0) > 0;
 }
 
-/** Delete a chip if owned by the user (or if admin). Returns false if not allowed/found. */
+/** Delete a chip if it was dropped by this device. Returns false if not allowed/found. */
 export async function deleteChip(
   id: string,
-  userId: string,
-  isAdmin: boolean,
+  deviceId: string,
 ): Promise<boolean> {
-  const res = isAdmin
-    ? await query("delete from parking_chips where id = $1", [id])
-    : await query(
-        "delete from parking_chips where id = $1 and reported_by = $2",
-        [id, userId],
-      );
+  const res = await query(
+    "delete from parking_chips where id = $1 and reported_by = $2",
+    [id, deviceId],
+  );
   return (res.rowCount ?? 0) > 0;
 }
