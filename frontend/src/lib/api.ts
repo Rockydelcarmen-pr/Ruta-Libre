@@ -55,26 +55,14 @@ export function matchRoute(body: {
   });
 }
 
-function authHeaders(token: string): Record<string, string> {
+function deviceHeaders(deviceToken: string): Record<string, string> {
   return {
     "content-type": "application/json",
-    authorization: `Bearer ${token}`,
+    "x-device-token": deviceToken,
   };
 }
 
-// --- Auth ---
-
-export function registerPublic(body: {
-  email: string;
-  password: string;
-  preferred_language?: Lang;
-}): Promise<AuthResult> {
-  return request<AuthResult>("/api/auth/register", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
+// --- Auth (organizers only) ---
 
 export function login(body: {
   email: string;
@@ -85,6 +73,16 @@ export function login(body: {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+// --- Anonymous device identity (for community parking chips) ---
+
+/**
+ * Mint an anonymous device token. Call once on first use and persist the result
+ * on-device; it carries no personal data and needs no email/password.
+ */
+export function createDevice(): Promise<{ device_token: string }> {
+  return request<{ device_token: string }>("/api/devices", { method: "POST" });
 }
 
 // --- Legal parking ---
@@ -112,26 +110,32 @@ export function getChips(
 }
 
 export function dropChip(
-  token: string,
+  deviceToken: string,
   body: { lat: number; lng: number; note?: string },
 ): Promise<Chip> {
   return request<Chip>("/api/chips", {
     method: "POST",
-    headers: authHeaders(token),
+    headers: deviceHeaders(deviceToken),
     body: JSON.stringify(body),
   });
 }
 
-export function takeChip(token: string, id: string): Promise<{ ok: boolean }> {
+export function takeChip(
+  deviceToken: string,
+  id: string,
+): Promise<{ ok: boolean }> {
   return request<{ ok: boolean }>(`/api/chips/${id}/taken`, {
     method: "POST",
-    headers: authHeaders(token),
+    headers: deviceHeaders(deviceToken),
   });
 }
 
-export function deleteChip(token: string, id: string): Promise<{ ok: boolean }> {
+export function deleteChip(
+  deviceToken: string,
+  id: string,
+): Promise<{ ok: boolean }> {
   return request<{ ok: boolean }>(`/api/chips/${id}`, {
     method: "DELETE",
-    headers: authHeaders(token),
+    headers: deviceHeaders(deviceToken),
   });
 }

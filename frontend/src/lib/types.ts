@@ -56,7 +56,7 @@ export interface MatchResponse {
   calendar_links: CalendarLinks | null;
 }
 
-export type Role = "public" | "approved" | "admin";
+export type Role = "approved" | "admin";
 
 export interface AuthUser {
   id: string;
@@ -88,7 +88,7 @@ export interface Chip {
   lng: number;
   note: string | null;
   status: "available" | "taken";
-  reported_by: string | null;
+  reported_by: string | null; // anonymous device id
   created_at: string;
   expires_at: string;
 }
