@@ -4,17 +4,85 @@ import type { OrgLinkRow, Row } from "../lib/serialize.js";
 const PROTEST_COLUMNS = `
   p.id, p.title_en, p.title_es, p.cause_en, p.cause_es, p.goal_en, p.goal_es,
   p.description_en, p.description_es, p.event_date, p.start_time,
-  p.estimated_duration_minutes, p.external_links, p.status, p.created_by,
+  p.estimated_duration_minutes, p.external_links, p.tags, p.status, p.created_by,
   p.created_at, ST_AsGeoJSON(p.route) as route_geojson
 `;
 
 export async function listActiveProtests(): Promise<Row[]> {
   const res = await query(`
-    select ${PROTEST_COLUMNS}
+    select ${PROTEST_COLUMNS},
+      coalesce(
+        array_agg(o.name) filter (where o.id is not null and po.role = 'organizer'),
+        '{}'
+      ) as organizer_names
     from protests p
+    left join protest_organizations po on po.protest_id = p.id
+    left join organizations o on o.id = po.organization_id
     where p.status = 'approved' and p.event_date >= current_date
+    group by p.id
     order by p.event_date, p.start_time nulls last
   `);
+  return res.rows;
+}
+
+/** Every protest, any status and any date. For the organizer/admin management view. */
+export async function listAllProtests(): Promise<Row[]> {
+  const res = await query(`
+    select ${PROTEST_COLUMNS},
+      coalesce(
+        array_agg(o.name) filter (where o.id is not null and po.role = 'organizer'),
+        '{}'
+      ) as organizer_names
+    from protests p
+    left join protest_organizations po on po.protest_id = p.id
+    left join organizations o on o.id = po.organization_id
+    group by p.id
+    order by p.event_date desc, p.start_time nulls last
+  `);
+  return res.rows;
+}
+
+/** Every protest created by a given user, any status/date. For an organizer's own view. */
+export async function listProtestsByCreator(userId: string): Promise<Row[]> {
+  const res = await query(
+    `
+    select ${PROTEST_COLUMNS},
+      coalesce(
+        array_agg(o.name) filter (where o.id is not null and po.role = 'organizer'),
+        '{}'
+      ) as organizer_names
+    from protests p
+    left join protest_organizations po on po.protest_id = p.id
+    left join organizations o on o.id = po.organization_id
+    where p.created_by = $1
+    group by p.id
+    order by p.event_date desc, p.start_time nulls last
+  `,
+    [userId],
+  );
+  return res.rows;
+}
+
+/** Approved, upcoming protests linked to a given organization (any role). */
+export async function protestsForOrg(orgId: string): Promise<Row[]> {
+  const res = await query(
+    `
+    select ${PROTEST_COLUMNS},
+      coalesce(
+        array_agg(o.name) filter (where o.id is not null and po2.role = 'organizer'),
+        '{}'
+      ) as organizer_names
+    from protests p
+    join protest_organizations link
+      on link.protest_id = p.id and link.organization_id = $1
+    left join protest_organizations po2 on po2.protest_id = p.id
+    left join organizations o on o.id = po2.organization_id
+    where p.status = 'approved' and p.event_date >= current_date
+    group by p.id
+    order by p.event_date, p.start_time nulls last
+  `,
+    [orgId],
+  );
   return res.rows;
 }
 

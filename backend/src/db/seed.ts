@@ -5,6 +5,11 @@ import type { LineStringGeoJSON } from "../lib/geo.js";
 
 const ADMIN_EMAIL = "admin@protest-tracker.local";
 
+/** A date N days from today as YYYY-MM-DD, so seeded protests stay upcoming. */
+function inDays(n: number): string {
+  return new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+}
+
 async function upsertOrg(
   name: string,
   description: string,
@@ -123,7 +128,7 @@ async function seed(): Promise<void> {
       cause_es: "Oposición a la privatización de terreno costero público.",
       goal_en: "Stop Ordinance 55 and keep beach access public.",
       goal_es: "Detener la Ordenanza 55 y mantener el acceso público a la playa.",
-      event_date: "2026-08-22",
+      event_date: inDays(14),
       start_time: "10:00",
       duration: 180,
       route: {
@@ -145,7 +150,7 @@ async function seed(): Promise<void> {
       cause_es: "Resiliencia costera y acción climática.",
       goal_en: "Raise awareness of sea-level rise in the historic district.",
       goal_es: "Concientizar sobre el aumento del nivel del mar en el casco histórico.",
-      event_date: "2026-08-29",
+      event_date: inDays(21),
       start_time: "09:00",
       duration: 120,
       route: {

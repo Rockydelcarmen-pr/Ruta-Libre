@@ -5,6 +5,7 @@ import { registerAuth } from "./plugins/auth.js";
 import { authRoutes } from "./routes/auth.js";
 import { deviceRoutes } from "./routes/devices.js";
 import { protestRoutes } from "./routes/protests.js";
+import { organizationRoutes } from "./routes/organizations.js";
 import { matchRoutes } from "./routes/match.js";
 import { parkingRoutes } from "./routes/parking.js";
 import { chipRoutes } from "./routes/chips.js";
@@ -46,6 +47,7 @@ async function build() {
   await app.register(authRoutes);
   await app.register(deviceRoutes);
   await app.register(protestRoutes);
+  await app.register(organizationRoutes);
   await app.register(matchRoutes);
   await app.register(parkingRoutes);
   await app.register(chipRoutes);

@@ -29,10 +29,12 @@ export interface SerializedProtest {
   start_time: unknown;
   estimated_duration_minutes: number | null;
   external_links: unknown;
+  tags: string[];
   status: string;
   route_geojson: unknown;
   organizers: SerializedOrg[];
   participants: SerializedOrg[];
+  organizer_names: string[];
 }
 
 /** An org row joined with its protest_organizations.role (aliased link_role). */
@@ -70,6 +72,7 @@ export function serializeProtest(
     estimated_duration_minutes:
       (row.estimated_duration_minutes as number | null) ?? null,
     external_links: row.external_links ?? [],
+    tags: (row.tags as string[] | null) ?? [],
     status: row.status as string,
     route_geojson:
       typeof row.route_geojson === "string"
@@ -79,5 +82,6 @@ export function serializeProtest(
     participants: orgLinks
       .filter((o) => o.link_role === "participant")
       .map(toOrg),
+    organizer_names: (row.organizer_names as string[] | null) ?? [],
   };
 }
