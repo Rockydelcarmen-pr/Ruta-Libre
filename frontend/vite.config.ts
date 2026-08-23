@@ -43,6 +43,11 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+  // MapLibre ships a web worker that Vite's dep optimizer mangles, leaving the
+  // map blank. Excluding it lets the worker load correctly.
+  optimizeDeps: {
+    exclude: ["maplibre-gl"],
+  },
   server: {
     port: 5173,
     proxy: {

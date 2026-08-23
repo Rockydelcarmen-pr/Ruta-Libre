@@ -1,27 +1,35 @@
 import { useTranslation } from "react-i18next";
 import type { Theme } from "../lib/theme";
+import { Brand } from "./Brand";
 import { LanguageToggle } from "./LanguageToggle";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
   theme: Theme;
   onToggleTheme: () => void;
+  organizerActive: boolean;
+  onToggleOrganizer: () => void;
 }
 
-export function Header({ theme, onToggleTheme }: Props) {
+export function Header({
+  theme,
+  onToggleTheme,
+  organizerActive,
+  onToggleOrganizer,
+}: Props) {
   const { t } = useTranslation();
-
   return (
     <header className="site-header">
       <div className="container site-header-inner">
-        <div className="brand">
-          <img src="/icon.svg" alt="" width="32" height="32" />
-          <div>
-            <h1>{t("app.title")}</h1>
-            <p className="tagline">{t("app.tagline")}</p>
-          </div>
-        </div>
+        <Brand />
         <div className="header-controls">
+          <button
+            type="button"
+            className="org-link"
+            onClick={onToggleOrganizer}
+          >
+            {organizerActive ? t("header.backToFeed") : t("header.organizer")}
+          </button>
           <LanguageToggle />
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </div>

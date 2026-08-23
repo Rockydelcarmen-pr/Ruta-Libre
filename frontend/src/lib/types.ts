@@ -23,10 +23,12 @@ export interface Protest {
   start_time: string | null;
   estimated_duration_minutes: number | null;
   external_links: string[];
+  tags: string[];
   status: string;
   route_geojson: LineString | null;
   organizers: Organization[];
   participants: Organization[];
+  organizer_names: string[];
 }
 
 export interface LatLng {

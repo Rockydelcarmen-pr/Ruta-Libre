@@ -43,6 +43,16 @@ export function getProtest(id: string, lang: Lang): Promise<Protest> {
   return request<Protest>(`/api/protests/${id}?lang=${lang}`);
 }
 
+/** Organizer/admin: every protest, any status or date. Requires a bearer token. */
+export function getManagedProtests(
+  token: string,
+  lang: Lang,
+): Promise<Protest[]> {
+  return request<Protest[]>(`/api/protests/manage?lang=${lang}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+}
+
 export function matchRoute(body: {
   origin: LatLng;
   destination: LatLng;
@@ -72,6 +82,152 @@ export function login(body: {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
+  });
+}
+
+function bearerHeaders(token: string): Record<string, string> {
+  return {
+    "content-type": "application/json",
+    authorization: `Bearer ${token}`,
+  };
+}
+
+// --- Organizations ---
+
+export interface OrgSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  website: string | null;
+  protest_count: number;
+}
+
+export interface OrgDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  website: string | null;
+  social_links: unknown;
+  protests: Protest[];
+}
+
+export function getOrganizations(): Promise<OrgSummary[]> {
+  return request<OrgSummary[]>("/api/organizations");
+}
+
+export function getOrganization(id: string, lang: Lang): Promise<OrgDetail> {
+  return request<OrgDetail>(`/api/organizations/${id}?lang=${lang}`);
+}
+
+export function createOrganization(
+  token: string,
+  body: { name: string; description?: string; website?: string },
+): Promise<OrgSummary> {
+  return request<OrgSummary>("/api/organizations", {
+    method: "POST",
+    headers: bearerHeaders(token),
+    body: JSON.stringify(body),
+  });
+}
+
+// --- Organizer: create a protest ---
+
+export interface CreateProtestBody {
+  title_en?: string;
+  title_es?: string;
+  cause_en?: string;
+  cause_es?: string;
+  goal_en?: string;
+  goal_es?: string;
+  event_date: string;
+  start_time?: string;
+  estimated_duration_minutes?: number;
+  route: { type: "LineString"; coordinates: [number, number][] };
+  tags?: string[];
+  external_links?: string[];
+  organizations?: { organization_id: string; role: "organizer" | "participant" }[];
+  status?: "pending" | "approved" | "cancelled";
+}
+
+export function createProtest(
+  token: string,
+  body: CreateProtestBody,
+): Promise<Protest> {
+  return request<Protest>("/api/protests", {
+    method: "POST",
+    headers: bearerHeaders(token),
+    body: JSON.stringify(body),
+  });
+}
+
+export interface ProtestEditData {
+  title_en: string | null;
+  title_es: string | null;
+  cause_en: string | null;
+  cause_es: string | null;
+  event_date: string;
+  start_time: string | null;
+  estimated_duration_minutes: number | null;
+  tags: string[];
+  coordinates: [number, number][];
+  organization_ids: string[];
+}
+
+export function getProtestForEdit(
+  token: string,
+  id: string,
+): Promise<ProtestEditData> {
+  return request<ProtestEditData>(`/api/protests/${id}/edit`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+}
+
+export function updateProtest(
+  token: string,
+  id: string,
+  body: Partial<CreateProtestBody>,
+): Promise<Protest> {
+  return request<Protest>(`/api/protests/${id}`, {
+    method: "PATCH",
+    headers: bearerHeaders(token),
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteProtest(
+  token: string,
+  id: string,
+): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/protests/${id}`, {
+    method: "DELETE",
+    headers: bearerHeaders(token),
+  });
+}
+
+export function updateOrganization(
+  token: string,
+  id: string,
+  body: { name?: string; description?: string | null; website?: string | null },
+): Promise<{
+  id: string;
+  name: string;
+  description: string | null;
+  website: string | null;
+}> {
+  return request(`/api/organizations/${id}`, {
+    method: "PATCH",
+    headers: bearerHeaders(token),
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteOrganization(
+  token: string,
+  id: string,
+): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/organizations/${id}`, {
+    method: "DELETE",
+    headers: bearerHeaders(token),
   });
 }
 

@@ -1,27 +1,38 @@
 import { useCallback, useEffect, useState } from "react";
 import { getProtests } from "../lib/api";
-import type { Lang, Protest } from "../lib/types";
+import { getSampleProtests, type MarchView } from "../lib/sampleProtests";
+import type { Lang } from "../lib/types";
 
 export function useProtests(lang: Lang): {
-  protests: Protest[];
+  marches: MarchView[];
   loading: boolean;
-  error: boolean;
+  usingSample: boolean;
   reload: () => void;
 } {
-  const [protests, setProtests] = useState<Protest[]>([]);
+  const [marches, setMarches] = useState<MarchView[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [usingSample, setUsingSample] = useState(false);
 
   const reload = useCallback(() => {
     let cancelled = false;
     setLoading(true);
-    setError(false);
     getProtests(lang)
       .then((data) => {
-        if (!cancelled) setProtests(data);
+        if (cancelled) return;
+        if (data.length > 0) {
+          setMarches(data.map((p) => ({ ...p })));
+          setUsingSample(false);
+        } else {
+          // Server reachable but empty: still show something to look at.
+          setMarches(getSampleProtests(lang));
+          setUsingSample(true);
+        }
       })
       .catch(() => {
-        if (!cancelled) setError(true);
+        if (cancelled) return;
+        // Server not connected yet: fall back to sample data.
+        setMarches(getSampleProtests(lang));
+        setUsingSample(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -33,5 +44,5 @@ export function useProtests(lang: Lang): {
 
   useEffect(() => reload(), [reload]);
 
-  return { protests, loading, error, reload };
+  return { marches, loading, usingSample, reload };
 }
