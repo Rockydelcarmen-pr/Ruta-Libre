@@ -423,6 +423,8 @@ body {
 .seemore-btn { margin-top: 10px; }
 .details { border-top: 2px solid var(--hair); margin-top: 12px; padding-top: 8px; }
 .details p { font-size: 13.5px; margin: 4px 0 2px; }
+.card-map { margin: 8px 0 4px; }
+.card-map .map-view { height: 220px; margin-bottom: 0; }
 
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
 .tag {

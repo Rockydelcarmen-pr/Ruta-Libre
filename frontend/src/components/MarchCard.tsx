@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Lang } from "../lib/types";
 import type { MarchView } from "../lib/sampleProtests";
+import { MapView } from "./MapView";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -192,6 +193,11 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
 
       {open && (
         <div className="details">
+          {march.route_geojson && (
+            <div className="card-map">
+              <MapView marches={[march]} />
+            </div>
+          )}
           {march.goal && (
             <>
               <div className="lbl">{t("protest.goal")}</div>
