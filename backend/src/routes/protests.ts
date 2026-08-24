@@ -41,6 +41,7 @@ const baseObject = z.object({
   route: lineString,
   external_links: z.array(z.string().url()).optional(),
   tags: z.array(z.string().min(1)).max(20).optional(),
+  streets: z.array(z.string().min(1)).max(60).optional(),
   organizations: z.array(orgLink).optional(),
   status: z.enum(["pending", "approved", "cancelled"]).optional(),
 });
@@ -119,7 +120,7 @@ export async function protestRoutes(app: FastifyInstance): Promise<void> {
         `select title_en, title_es, cause_en, cause_es, goal_en, goal_es,
            to_char(event_date, 'YYYY-MM-DD') as event_date,
            to_char(start_time, 'HH24:MI') as start_time,
-           estimated_duration_minutes, tags, status, created_by,
+           estimated_duration_minutes, tags, streets, status, created_by,
            ST_AsGeoJSON(route) as route_geojson
          from protests where id = $1`,
         [id],
@@ -145,6 +146,7 @@ export async function protestRoutes(app: FastifyInstance): Promise<void> {
         start_time: row.start_time,
         estimated_duration_minutes: row.estimated_duration_minutes,
         tags: row.tags,
+        streets: row.streets,
         coordinates: route.coordinates,
         organization_ids: links.rows.map((r) => r.organization_id),
       });
@@ -196,7 +198,8 @@ export async function protestRoutes(app: FastifyInstance): Promise<void> {
         .send({ error: "invalid_input", details: parsed.error.flatten() });
     }
     const d = parsed.data;
-    const streets = await getRouteStreets(d.route.coordinates);
+    // An organizer-supplied list wins over the auto-detected one.
+    const streets = d.streets ?? (await getRouteStreets(d.route.coordinates));
     const client = await pool.connect();
     try {
       await client.query("begin");
@@ -281,8 +284,16 @@ export async function protestRoutes(app: FastifyInstance): Promise<void> {
         const route = data.route as { coordinates: [number, number][] };
         sets.push(`route = ST_SetSRID(ST_GeomFromGeoJSON($${i++}), 4326)`);
         vals.push(JSON.stringify(route));
+        // An organizer-supplied list (below) wins over auto-detection, so
+        // only recompute here if they didn't also send one.
+        if (data.streets === undefined) {
+          sets.push(`streets = $${i++}`);
+          vals.push(await getRouteStreets(route.coordinates));
+        }
+      }
+      if (data.streets !== undefined) {
         sets.push(`streets = $${i++}`);
-        vals.push(await getRouteStreets(route.coordinates));
+        vals.push(data.streets);
       }
 
       const client = await pool.connect();

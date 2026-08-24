@@ -57,6 +57,13 @@ export function OrganizationsView({ lang }: { lang: Lang }) {
               {o.website && (
                 <span className="muted">{hostname(o.website)}</span>
               )}
+              {(["instagram", "twitter", "facebook", "tiktok"] as const)
+                .filter((key) => o.social_links[key])
+                .map((key) => (
+                  <span key={key} className="muted">
+                    {t(`org.socialLabel.${key}`)}
+                  </span>
+                ))}
             </div>
           </button>
         ))}

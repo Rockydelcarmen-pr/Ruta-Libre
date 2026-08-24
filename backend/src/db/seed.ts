@@ -123,7 +123,7 @@ async function seed(): Promise<void> {
 
     await insertProtest({
       title_en: "March for El Escambrón",
-      title_es: "Marcha por El Escambrón",
+      title_es: "Manifestación por El Escambrón",
       cause_en: "Opposing the privatization of coastal public land.",
       cause_es: "Oposición a la privatización de terreno costero público.",
       goal_en: "Stop Ordinance 55 and keep beach access public.",

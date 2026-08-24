@@ -125,7 +125,10 @@ export async function getRouteStreets(points: Coord[]): Promise<string[]> {
   if (!config.hasRoutingKey || points.length < 2) return [];
 
   try {
-    const url = `${config.ORS_BASE_URL}/v2/directions/${config.ORS_PROFILE}/geojson`;
+    // Marches are always on foot; foot-walking ignores one-way car
+    // restrictions so it follows the drawn path directly instead of
+    // detouring through parallel streets like driving directions would.
+    const url = `${config.ORS_BASE_URL}/v2/directions/foot-walking/geojson`;
     const res = await fetch(url, {
       method: "POST",
       headers: {
@@ -143,7 +146,10 @@ export async function getRouteStreets(points: Coord[]): Promise<string[]> {
     const names: string[] = [];
     for (const segment of segments) {
       for (const step of segment.steps ?? []) {
-        const name = step.name?.trim();
+        // ORS joins a way's own name with a crossing/adjacent street as
+        // "Main St / Cross St" at intersections; keep only the street the
+        // route is actually on.
+        const name = step.name?.split("/")[0]?.trim();
         // ORS uses "-" for unnamed ways; skip those and collapse consecutive
         // repeats (the same street can span several steps in a row).
         if (name && name !== "-" && names[names.length - 1] !== name) {

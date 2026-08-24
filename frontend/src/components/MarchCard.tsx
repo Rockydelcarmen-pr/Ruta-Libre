@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Lang } from "../lib/types";
 import type { MarchView } from "../lib/sampleProtests";
 import { MapView } from "./MapView";
+import { ParkingSection } from "./ParkingSection";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -51,6 +52,7 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
   const [going, setGoing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
+  const [streetsOpen, setStreetsOpen] = useState(false);
 
   const baseGoing = march.going ?? 0;
   const count = baseGoing + (going ? 1 : 0);
@@ -200,8 +202,21 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
           )}
           {march.streets.length > 0 && (
             <>
-              <div className="lbl">{t("protest.streets")}</div>
-              <p>{march.streets.join(" → ")}</p>
+              <button
+                type="button"
+                className="lbl streets-toggle"
+                aria-expanded={streetsOpen}
+                onClick={() => setStreetsOpen((o) => !o)}
+              >
+                {t("protest.streets")} {streetsOpen ? "▾" : "▸"}
+              </button>
+              {streetsOpen && (
+                <ol className="route-streets">
+                  {march.streets.map((street, i) => (
+                    <li key={i}>{street}</li>
+                  ))}
+                </ol>
+              )}
             </>
           )}
           {march.goal && (
@@ -240,6 +255,7 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
               </div>
             </>
           )}
+          {march.route_geojson && <ParkingSection march={march} />}
         </div>
       )}
     </article>

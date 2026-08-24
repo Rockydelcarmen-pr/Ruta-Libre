@@ -35,7 +35,14 @@ export function OrgProfile({
 
   const description = detail?.description ?? org.description;
   const website = detail?.website ?? org.website;
+  const social = detail?.social_links ?? org.social_links;
   const protests = detail?.protests ?? [];
+
+  const socialEntries = (
+    ["instagram", "twitter", "facebook", "tiktok"] as const
+  )
+    .map((key) => ({ key, url: social?.[key] }))
+    .filter((s): s is { key: typeof s.key; url: string } => Boolean(s.url));
 
   return (
     <section className="feed container">
@@ -47,16 +54,29 @@ export function OrgProfile({
         {org.name}
       </h2>
       {description && <p>{description}</p>}
-      {website && (
+      {(website || socialEntries.length > 0) && (
         <div className="linklist">
-          <a
-            className="chip-link"
-            href={website}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {hostname(website)}
-          </a>
+          {website && (
+            <a
+              className="chip-link"
+              href={website}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {hostname(website)}
+            </a>
+          )}
+          {socialEntries.map((s) => (
+            <a
+              key={s.key}
+              className="chip-link"
+              href={s.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t(`org.socialLabel.${s.key}`)}
+            </a>
+          ))}
         </div>
       )}
 

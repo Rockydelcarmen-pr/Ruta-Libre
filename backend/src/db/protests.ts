@@ -3,7 +3,9 @@ import type { OrgLinkRow, Row } from "../lib/serialize.js";
 
 const PROTEST_COLUMNS = `
   p.id, p.title_en, p.title_es, p.cause_en, p.cause_es, p.goal_en, p.goal_es,
-  p.description_en, p.description_es, p.event_date, p.start_time,
+  p.description_en, p.description_es,
+  to_char(p.event_date, 'YYYY-MM-DD') as event_date,
+  to_char(p.start_time, 'HH24:MI') as start_time,
   p.estimated_duration_minutes, p.external_links, p.tags, p.streets, p.status,
   p.created_by, p.created_at, ST_AsGeoJSON(p.route) as route_geojson
 `;

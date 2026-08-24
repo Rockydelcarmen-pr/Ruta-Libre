@@ -95,4 +95,16 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const token = await reply.jwtSign({ sub: user.id, role: user.role });
     return reply.send({ token, user: { id: user.id, email, role: user.role } });
   });
+
+  // Admin: list organizer/admin accounts, to assign an organization's owner.
+  app.get(
+    "/api/users",
+    { preHandler: app.requireRole(["admin"]) },
+    async (_req, reply) => {
+      const res = await query<{ id: string; email: string; role: Role }>(
+        "select id, email, role from users order by email",
+      );
+      return reply.send(res.rows);
+    },
+  );
 }

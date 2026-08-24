@@ -36,7 +36,7 @@ const SPECS: SampleSpec[] = [
     id: "sample-escambron",
     title: {
       en: "March for El Escambrón",
-      es: "Marcha por El Escambrón",
+      es: "Manifestación por El Escambrón",
     },
     cause: {
       en: "Keep El Escambrón's coast public. Stop Ordinance 55.",

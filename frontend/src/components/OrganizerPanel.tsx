@@ -78,15 +78,13 @@ export function OrganizerPanel({
                 >
                   {t("org.newProtest")}
                 </button>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    className="btn secondary"
-                    onClick={() => setMode("orgs")}
-                  >
-                    {t("org.manageOrgs")}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={() => setMode("orgs")}
+                >
+                  {isAdmin ? t("org.manageOrgs") : t("org.manageMyOrgs")}
+                </button>
               </div>
             </>
           )}
@@ -114,8 +112,8 @@ export function OrganizerPanel({
                     }}
                   />
                 )}
-                {mode === "orgs" && isAdmin && (
-                  <OrgManager token={auth.token!} />
+                {mode === "orgs" && (
+                  <OrgManager token={auth.token!} isAdmin={isAdmin} />
                 )}
               </div>
             </>

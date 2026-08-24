@@ -94,12 +94,25 @@ function bearerHeaders(token: string): Record<string, string> {
 
 // --- Organizations ---
 
+export interface SocialLinks {
+  instagram?: string;
+  twitter?: string;
+  facebook?: string;
+  tiktok?: string;
+}
+
 export interface OrgSummary {
   id: string;
   name: string;
   description: string | null;
   website: string | null;
+  social_links: SocialLinks;
   protest_count: number;
+}
+
+export interface OrgManageSummary extends OrgSummary {
+  owner_user_id: string | null;
+  listed: boolean;
 }
 
 export interface OrgDetail {
@@ -107,12 +120,18 @@ export interface OrgDetail {
   name: string;
   description: string | null;
   website: string | null;
-  social_links: unknown;
+  social_links: SocialLinks;
   protests: Protest[];
 }
 
 export function getOrganizations(): Promise<OrgSummary[]> {
   return request<OrgSummary[]>("/api/organizations");
+}
+
+export function getMyOrganizations(token: string): Promise<OrgManageSummary[]> {
+  return request<OrgManageSummary[]>("/api/organizations/mine", {
+    headers: { authorization: `Bearer ${token}` },
+  });
 }
 
 export function getOrganization(id: string, lang: Lang): Promise<OrgDetail> {
@@ -121,12 +140,29 @@ export function getOrganization(id: string, lang: Lang): Promise<OrgDetail> {
 
 export function createOrganization(
   token: string,
-  body: { name: string; description?: string; website?: string },
+  body: {
+    name: string;
+    description?: string;
+    website?: string;
+    social_links?: SocialLinks;
+  },
 ): Promise<OrgSummary> {
   return request<OrgSummary>("/api/organizations", {
     method: "POST",
     headers: bearerHeaders(token),
     body: JSON.stringify(body),
+  });
+}
+
+export interface AppUser {
+  id: string;
+  email: string;
+  role: "approved" | "admin";
+}
+
+export function getUsers(token: string): Promise<AppUser[]> {
+  return request<AppUser[]>("/api/users", {
+    headers: { authorization: `Bearer ${token}` },
   });
 }
 
@@ -144,6 +180,7 @@ export interface CreateProtestBody {
   estimated_duration_minutes?: number;
   route: { type: "LineString"; coordinates: [number, number][] };
   tags?: string[];
+  streets?: string[];
   external_links?: string[];
   organizations?: { organization_id: string; role: "organizer" | "participant" }[];
   status?: "pending" | "approved" | "cancelled";
@@ -169,6 +206,7 @@ export interface ProtestEditData {
   start_time: string | null;
   estimated_duration_minutes: number | null;
   tags: string[];
+  streets: string[];
   coordinates: [number, number][];
   organization_ids: string[];
 }
@@ -207,12 +245,20 @@ export function deleteProtest(
 export function updateOrganization(
   token: string,
   id: string,
-  body: { name?: string; description?: string | null; website?: string | null },
+  body: {
+    name?: string;
+    description?: string | null;
+    website?: string | null;
+    social_links?: SocialLinks;
+    owner_user_id?: string | null;
+  },
 ): Promise<{
   id: string;
   name: string;
   description: string | null;
   website: string | null;
+  social_links: SocialLinks;
+  owner_user_id: string | null;
 }> {
   return request(`/api/organizations/${id}`, {
     method: "PATCH",

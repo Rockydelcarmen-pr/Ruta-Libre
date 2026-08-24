@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Map as MLMap,
   Marker,
@@ -11,6 +12,12 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection, LineString } from "geojson";
 import type { MarchView } from "../lib/sampleProtests";
 import { MAP_STYLE, SAN_JUAN } from "../lib/mapStyle";
+
+function dateLabel(eventDate: string, lang: string): string {
+  const d = new Date(`${eventDate}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(lang, { day: "numeric", month: "short" });
+}
 
 function routeFeatures(marches: MarchView[]): Feature[] {
   return marches
@@ -27,6 +34,7 @@ function drawRoutes(
   map: MLMap,
   marches: MarchView[],
   markersRef: { current: Marker[] },
+  lang: string,
 ): void {
   const data: FeatureCollection = {
     type: "FeatureCollection",
@@ -59,19 +67,50 @@ function drawRoutes(
     any = true;
 
     const start = coords[0] as [number, number];
-    const el = document.createElement("div");
-    el.className = "march-marker";
-    const marker = new Marker({ element: el })
+    const startEl = document.createElement("div");
+    startEl.className = "march-marker march-marker-start";
+    startEl.textContent = "S";
+    startEl.title = "Start";
+    const startMarker = new Marker({ element: startEl })
       .setLngLat(start)
       .setPopup(new Popup({ offset: 14 }).setText(m.title ?? "Protest"))
       .addTo(map);
-    markersRef.current.push(marker);
+    markersRef.current.push(startMarker);
+
+    const label = dateLabel(m.event_date, lang);
+    if (label) {
+      const dateEl = document.createElement("div");
+      dateEl.className = "march-date-bubble";
+      dateEl.textContent = label;
+      const dateMarker = new Marker({
+        element: dateEl,
+        anchor: "bottom",
+        offset: [0, -20],
+      })
+        .setLngLat(start)
+        .addTo(map);
+      markersRef.current.push(dateMarker);
+    }
+
+    if (coords.length > 1) {
+      const end = coords[coords.length - 1] as [number, number];
+      const endEl = document.createElement("div");
+      endEl.className = "march-marker march-marker-end";
+      endEl.textContent = "E";
+      endEl.title = "End";
+      const endMarker = new Marker({ element: endEl })
+        .setLngLat(end)
+        .setPopup(new Popup({ offset: 14 }).setText(m.title ?? "Protest"))
+        .addTo(map);
+      markersRef.current.push(endMarker);
+    }
   }
 
   if (any) map.fitBounds(bounds, { padding: 48, maxZoom: 15 });
 }
 
 export function MapView({ marches }: { marches: MarchView[] }) {
+  const { i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
@@ -79,6 +118,8 @@ export function MapView({ marches }: { marches: MarchView[] }) {
   // Always-current marches, so the load handler draws the latest data.
   const marchesRef = useRef(marches);
   marchesRef.current = marches;
+  const langRef = useRef(i18n.language);
+  langRef.current = i18n.language;
 
   // Create the map once.
   useEffect(() => {
@@ -96,14 +137,14 @@ export function MapView({ marches }: { marches: MarchView[] }) {
     map.on("load", () => {
       loadedRef.current = true;
       map.resize();
-      drawRoutes(map, marchesRef.current, markersRef);
+      drawRoutes(map, marchesRef.current, markersRef, langRef.current);
     });
 
     // Draw once the map has settled too, in case load fired before data arrived.
     map.on("idle", () => {
       if (!loadedRef.current) return;
       if (!map.getSource("marches")) {
-        drawRoutes(map, marchesRef.current, markersRef);
+        drawRoutes(map, marchesRef.current, markersRef, langRef.current);
       }
     });
 
@@ -123,14 +164,14 @@ export function MapView({ marches }: { marches: MarchView[] }) {
     if (!map) return;
     if (loadedRef.current || map.isStyleLoaded()) {
       loadedRef.current = true;
-      drawRoutes(map, marches, markersRef);
+      drawRoutes(map, marches, markersRef, i18n.language);
     } else {
       map.once("idle", () => {
         loadedRef.current = true;
-        drawRoutes(map, marches, markersRef);
+        drawRoutes(map, marches, markersRef, i18n.language);
       });
     }
-  }, [marches]);
+  }, [marches, i18n.language]);
 
   // data-lenis-prevent: let wheel events zoom the map instead of scrolling the page.
   return <div ref={containerRef} className="map-view" data-lenis-prevent />;

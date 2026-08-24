@@ -34,6 +34,7 @@ export function CreateProtest({
   const [startTime, setStartTime] = useState("");
   const [duration, setDuration] = useState("");
   const [tagsInput, setTagsInput] = useState("");
+  const [streetsInput, setStreetsInput] = useState("");
 
   const [orgs, setOrgs] = useState<{ id: string; name: string }[]>([]);
   const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
@@ -66,6 +67,7 @@ export function CreateProtest({
             : "",
         );
         setTagsInput(d.tags.join(", "));
+        setStreetsInput(d.streets.join("\n"));
         setSelectedOrgs(d.organization_ids);
         setPoints(d.coordinates);
       })
@@ -111,6 +113,10 @@ export function CreateProtest({
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
+    const streets = streetsInput
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
 
     const body: CreateProtestBody = {
       title_es: titleEs || undefined,
@@ -122,6 +128,7 @@ export function CreateProtest({
       estimated_duration_minutes: duration ? Number(duration) : undefined,
       route: { type: "LineString", coordinates: points },
       tags,
+      streets: streets.length > 0 ? streets : undefined,
       organizations: selectedOrgs.map((id) => ({
         organization_id: id,
         role: "organizer" as const,
@@ -157,6 +164,7 @@ export function CreateProtest({
     setStartTime("");
     setDuration("");
     setTagsInput("");
+    setStreetsInput("");
     setSelectedOrgs([]);
     setDone(false);
     setError(null);
@@ -274,6 +282,21 @@ export function CreateProtest({
         {t("org.tags")}
       </label>
       <input id="d-tags" className="text-input" placeholder="MVC, PIP, 2028" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} />
+
+      <label className="field-label" htmlFor="d-streets">
+        {t("org.streets")}
+      </label>
+      <p className="muted" style={{ marginTop: 0 }}>
+        {t("org.streetsHelp")}
+      </p>
+      <textarea
+        id="d-streets"
+        className="text-input"
+        rows={4}
+        placeholder={t("org.streetsPlaceholder")}
+        value={streetsInput}
+        onChange={(e) => setStreetsInput(e.target.value)}
+      />
 
       <div className="field-label">{t("org.organizers")}</div>
       <div className="org-picker">

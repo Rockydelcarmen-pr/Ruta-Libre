@@ -13,9 +13,13 @@ import { MAP_STYLE, SAN_JUAN } from "../lib/mapStyle";
 type Pt = [number, number];
 
 function toData(points: Pt[]): FeatureCollection {
+  const last = points.length - 1;
   const features: FeatureCollection["features"] = points.map((p, i) => ({
     type: "Feature",
-    properties: { i },
+    properties: {
+      i,
+      role: i === 0 ? "start" : i === last ? "end" : "mid",
+    },
     geometry: { type: "Point", coordinates: p },
   }));
   if (points.length >= 2) {
@@ -82,8 +86,16 @@ export function RouteDrawMap({
         source: "draft",
         filter: ["==", "$type", "Point"],
         paint: {
-          "circle-radius": 6,
-          "circle-color": "#1573B8",
+          "circle-radius": ["match", ["get", "role"], "mid", 6, 9],
+          "circle-color": [
+            "match",
+            ["get", "role"],
+            "start",
+            "#1F9D57",
+            "end",
+            "#E11D2A",
+            "#1573B8",
+          ],
           "circle-stroke-color": "#fff",
           "circle-stroke-width": 2,
         },
