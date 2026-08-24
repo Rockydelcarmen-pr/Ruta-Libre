@@ -24,6 +24,7 @@ export interface Protest {
   estimated_duration_minutes: number | null;
   external_links: string[];
   tags: string[];
+  streets: string[];
   status: string;
   route_geojson: LineString | null;
   organizers: Organization[];

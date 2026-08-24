@@ -28,6 +28,7 @@ interface SampleSpec {
   links: string[];
   route: [number, number][];
   tags: string[];
+  streets: string[];
 }
 
 const SPECS: SampleSpec[] = [
@@ -63,6 +64,7 @@ const SPECS: SampleSpec[] = [
       [-66.0945, 18.465],
     ],
     tags: ["EJEMPLO", "Ordenanza 55", "costa", "ambiente"],
+    streets: ["Av. Muñoz Rivera", "Calle Rosales"],
   },
   {
     id: "sample-viejo-sj",
@@ -95,6 +97,7 @@ const SPECS: SampleSpec[] = [
       [-66.112, 18.467],
     ],
     tags: ["EJEMPLO", "clima", "costa", "ambiente"],
+    streets: ["Calle Fortaleza", "Caleta de San Juan"],
   },
 ];
 
@@ -110,6 +113,7 @@ export function getSampleProtests(lang: Lang): MarchView[] {
     estimated_duration_minutes: s.duration,
     external_links: s.links,
     tags: s.tags,
+    streets: s.streets,
     status: s.status,
     route_geojson: { type: "LineString", coordinates: s.route },
     organizers: s.organizers.map((o) => ({ ...o, social_links: null })),

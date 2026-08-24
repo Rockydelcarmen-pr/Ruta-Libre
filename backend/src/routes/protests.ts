@@ -11,6 +11,7 @@ import {
 import { serializeProtest } from "../lib/serialize.js";
 import { normalizeLang } from "../lib/i18n.js";
 import { buildIcs } from "../lib/calendar.js";
+import { getRouteStreets } from "../lib/routing.js";
 
 const coord = z.tuple([z.number(), z.number()]);
 const lineString = z.object({
@@ -195,6 +196,7 @@ export async function protestRoutes(app: FastifyInstance): Promise<void> {
         .send({ error: "invalid_input", details: parsed.error.flatten() });
     }
     const d = parsed.data;
+    const streets = await getRouteStreets(d.route.coordinates);
     const client = await pool.connect();
     try {
       await client.query("begin");
@@ -202,10 +204,10 @@ export async function protestRoutes(app: FastifyInstance): Promise<void> {
         `insert into protests
           (title_en, title_es, cause_en, cause_es, goal_en, goal_es,
            description_en, description_es, event_date, start_time,
-           estimated_duration_minutes, route, external_links, tags, status, created_by)
+           estimated_duration_minutes, route, external_links, tags, streets, status, created_by)
          values
           ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,
-           ST_SetSRID(ST_GeomFromGeoJSON($12), 4326), $13::jsonb, $14, $15, $16)
+           ST_SetSRID(ST_GeomFromGeoJSON($12), 4326), $13::jsonb, $14, $15, $16, $17)
          returning id`,
         [
           d.title_en ?? null,
@@ -222,6 +224,7 @@ export async function protestRoutes(app: FastifyInstance): Promise<void> {
           JSON.stringify(d.route),
           JSON.stringify(d.external_links ?? []),
           d.tags ?? [],
+          streets,
           d.status ?? "pending",
           req.user.sub,
         ],
@@ -275,8 +278,11 @@ export async function protestRoutes(app: FastifyInstance): Promise<void> {
         vals.push(data.tags);
       }
       if (data.route !== undefined) {
+        const route = data.route as { coordinates: [number, number][] };
         sets.push(`route = ST_SetSRID(ST_GeomFromGeoJSON($${i++}), 4326)`);
-        vals.push(JSON.stringify(data.route));
+        vals.push(JSON.stringify(route));
+        sets.push(`streets = $${i++}`);
+        vals.push(await getRouteStreets(route.coordinates));
       }
 
       const client = await pool.connect();

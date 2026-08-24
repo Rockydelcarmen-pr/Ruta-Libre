@@ -30,6 +30,7 @@ export interface SerializedProtest {
   estimated_duration_minutes: number | null;
   external_links: unknown;
   tags: string[];
+  streets: string[];
   status: string;
   route_geojson: unknown;
   organizers: SerializedOrg[];
@@ -73,6 +74,7 @@ export function serializeProtest(
       (row.estimated_duration_minutes as number | null) ?? null,
     external_links: row.external_links ?? [],
     tags: (row.tags as string[] | null) ?? [],
+    streets: (row.streets as string[] | null) ?? [],
     status: row.status as string,
     route_geojson:
       typeof row.route_geojson === "string"

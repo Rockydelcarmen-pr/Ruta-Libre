@@ -39,6 +39,7 @@ export const en = {
     organizers: "Organizers",
     links: "Links",
     details: "Details",
+    streets: "Streets on the route",
   },
   nav: { marches: "Events", orgs: "Organizations" },
   orgs: {
@@ -100,7 +101,9 @@ export const en = {
     createHeading: "Create a protest",
     route: "Route",
     routeHelp:
-      "Click along the streets on the map to draw the march route, point by point.",
+      "Click along the streets to add a point. Drag a point to move it, or right-click a point to remove it.",
+    routeAccuracyWarning:
+      "Place points as precisely as possible on the actual streets the march follows — we use these points to look up the street names shown on the event page. Points placed off-street or far from the real path can produce a wrong or incomplete street list.",
     points: "points",
     undo: "Undo point",
     clear: "Clear",

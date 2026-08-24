@@ -198,6 +198,12 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
               <MapView marches={[march]} />
             </div>
           )}
+          {march.streets.length > 0 && (
+            <>
+              <div className="lbl">{t("protest.streets")}</div>
+              <p>{march.streets.join(" → ")}</p>
+            </>
+          )}
           {march.goal && (
             <>
               <div className="lbl">{t("protest.goal")}</div>

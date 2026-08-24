@@ -104,3 +104,55 @@ export async function getRoutes(
     durationSeconds: Math.round(f.properties?.summary?.duration ?? 0),
   }));
 }
+
+interface OrsStepsResponse {
+  features?: Array<{
+    properties?: {
+      segments?: Array<{ steps?: Array<{ name?: string }> }>;
+    };
+  }>;
+}
+
+/**
+ * Best-effort ordered, deduped list of street names the route travels along.
+ * Routes the organizer's drawn points (as waypoints, snapped to the road
+ * network) through ORS and reads the turn-by-turn step names back out.
+ * Never throws: returns [] if routing is unconfigured, unreachable, or the
+ * points don't snap to a usable route. This is supplementary display data,
+ * not something a save should ever be blocked on.
+ */
+export async function getRouteStreets(points: Coord[]): Promise<string[]> {
+  if (!config.hasRoutingKey || points.length < 2) return [];
+
+  try {
+    const url = `${config.ORS_BASE_URL}/v2/directions/${config.ORS_PROFILE}/geojson`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: config.ORS_API_KEY,
+        "Content-Type": "application/json",
+        Accept: "application/geo+json",
+      },
+      body: JSON.stringify({ coordinates: points, instructions: true }),
+    });
+    if (!res.ok) return [];
+
+    const data = (await res.json().catch(() => null)) as OrsStepsResponse | null;
+    const segments = data?.features?.[0]?.properties?.segments ?? [];
+
+    const names: string[] = [];
+    for (const segment of segments) {
+      for (const step of segment.steps ?? []) {
+        const name = step.name?.trim();
+        // ORS uses "-" for unnamed ways; skip those and collapse consecutive
+        // repeats (the same street can span several steps in a row).
+        if (name && name !== "-" && names[names.length - 1] !== name) {
+          names.push(name);
+        }
+      }
+    }
+    return names;
+  } catch {
+    return [];
+  }
+}

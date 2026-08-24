@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ApiError,
   createOrganization,
   createProtest,
   getOrganizations,
@@ -137,8 +138,10 @@ export function CreateProtest({
       }
       setDone(true);
       onCreated();
-    } catch {
-      setError(isEdit ? t("org.updateError") : t("org.createError"));
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.message : undefined;
+      const base = isEdit ? t("org.updateError") : t("org.createError");
+      setError(detail ? `${base} (${detail})` : base);
     } finally {
       setBusy(false);
     }
@@ -182,10 +185,17 @@ export function CreateProtest({
       <p className="muted" style={{ marginTop: 0 }}>
         {t("org.routeHelp")}
       </p>
+      <p className="warn-box">{t("org.routeAccuracyWarning")}</p>
       <RouteDrawMap
         points={points}
         autoFit={isEdit}
         onAddPoint={(p) => setPoints((prev) => [...prev, p])}
+        onMovePoint={(i, p) =>
+          setPoints((prev) => prev.map((pt, idx) => (idx === i ? p : pt)))
+        }
+        onRemovePoint={(i) =>
+          setPoints((prev) => prev.filter((_, idx) => idx !== i))
+        }
       />
       <div className="route-tools">
         <span className="pill">

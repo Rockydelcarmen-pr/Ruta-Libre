@@ -41,6 +41,7 @@ export const es: Resources = {
     organizers: "Organizadores",
     links: "Enlaces",
     details: "Detalles",
+    streets: "Calles de la ruta",
   },
   nav: { marches: "Eventos", orgs: "Organizaciones" },
   orgs: {
@@ -102,7 +103,9 @@ export const es: Resources = {
     createHeading: "Crear una protesta",
     route: "Ruta",
     routeHelp:
-      "Haz clic a lo largo de las calles en el mapa para trazar la ruta de la marcha, punto por punto.",
+      "Haz clic a lo largo de las calles para añadir un punto. Arrastra un punto para moverlo, o haz clic derecho sobre un punto para eliminarlo.",
+    routeAccuracyWarning:
+      "Coloca los puntos con la mayor precisión posible sobre las calles reales que sigue la marcha — usamos estos puntos para identificar los nombres de las calles que se muestran en la página del evento. Puntos fuera de la calle o alejados de la ruta real pueden generar una lista de calles incorrecta o incompleta.",
     points: "puntos",
     undo: "Deshacer punto",
     clear: "Borrar",

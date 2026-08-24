@@ -9,6 +9,7 @@
   --flag-blue: #5FB0E6;     /* pro-independence celeste, decorative only */
   --green: #1F9D57;
   --green-deep: #147a41;
+  --amber: #B7791F;
 
   --bg: #EAEEF3;
   --surface: #FFFFFF;
@@ -45,6 +46,7 @@
     --blue: #2F8AD4;
     --blue-deep: #1F6BB0;
     --green: #34C776;
+    --amber: #E8A93B;
   }
 }
 :root[data-theme="dark"] {
@@ -59,6 +61,7 @@
   --blue: #2F8AD4;
   --blue-deep: #1F6BB0;
   --green: #34C776;
+  --amber: #E8A93B;
 }
 :root[data-theme="light"] {
   --bg: #EAEEF3;
@@ -444,6 +447,15 @@ body {
 
 .muted { color: var(--muted); font-size: 14px; }
 .error-text { color: var(--red); font-size: 14px; }
+.warn-box {
+  border-left: 3px solid var(--amber);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+  color: var(--ink);
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin: 0 0 10px;
+}
 
 /* ---------- First-run disclosure ---------- */
 .disclosure {
