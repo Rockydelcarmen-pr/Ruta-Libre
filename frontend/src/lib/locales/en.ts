@@ -62,6 +62,8 @@ export const en = {
     geoDenied:
       "Couldn't get your location. Enable location access to report parking.",
     geoUnsupported: "Your browser doesn't support location sharing.",
+    tooFar:
+      "You're too far from this march to report parking here — only report from the location itself.",
     gpsNote:
       "Reports are anonymous and expire automatically after a while.",
   },

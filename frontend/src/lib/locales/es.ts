@@ -64,6 +64,8 @@ export const es: Resources = {
     geoDenied:
       "No se pudo obtener tu ubicación. Activa el acceso a tu ubicación para reportar estacionamiento.",
     geoUnsupported: "Tu navegador no soporta compartir ubicación.",
+    tooFar:
+      "Estás demasiado lejos de esta manifestación para reportar estacionamiento aquí — repórtalo solo desde el lugar.",
     gpsNote: "Los reportes son anónimos y expiran automáticamente.",
   },
   nav: { marches: "Eventos", orgs: "Organizaciones" },

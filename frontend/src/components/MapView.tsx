@@ -11,6 +11,7 @@ import {
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection, LineString } from "geojson";
 import type { MarchView } from "../lib/sampleProtests";
+import type { Chip } from "../lib/types";
 import { mapStyle, SAN_JUAN } from "../lib/mapStyle";
 
 function dateLabel(eventDate: string, lang: string): string {
@@ -33,6 +34,7 @@ function routeFeatures(marches: MarchView[]): Feature[] {
 function drawRoutes(
   map: MLMap,
   marches: MarchView[],
+  chips: Chip[],
   markersRef: { current: Marker[] },
   lang: string,
 ): void {
@@ -106,18 +108,38 @@ function drawRoutes(
     }
   }
 
+  for (const chip of chips) {
+    const el = document.createElement("div");
+    el.className = "march-marker chip-marker";
+    el.textContent = "P";
+    el.title = "Reported parking";
+    const marker = new Marker({ element: el })
+      .setLngLat([chip.lng, chip.lat])
+      .setPopup(new Popup({ offset: 14 }).setText(chip.note || "Parking reported here"))
+      .addTo(map);
+    markersRef.current.push(marker);
+  }
+
   if (any) map.fitBounds(bounds, { padding: 48, maxZoom: 15 });
 }
 
-export function MapView({ marches }: { marches: MarchView[] }) {
+export function MapView({
+  marches,
+  chips = [],
+}: {
+  marches: MarchView[];
+  chips?: Chip[];
+}) {
   const { i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const loadedRef = useRef(false);
-  // Always-current marches, so the load handler draws the latest data.
+  // Always-current marches/chips, so the load handler draws the latest data.
   const marchesRef = useRef(marches);
   marchesRef.current = marches;
+  const chipsRef = useRef(chips);
+  chipsRef.current = chips;
   const langRef = useRef(i18n.language);
   langRef.current = i18n.language;
 
@@ -138,14 +160,14 @@ export function MapView({ marches }: { marches: MarchView[] }) {
     map.on("load", () => {
       loadedRef.current = true;
       map.resize();
-      drawRoutes(map, marchesRef.current, markersRef, langRef.current);
+      drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, langRef.current);
     });
 
     // Draw once the map has settled too, in case load fired before data arrived.
     map.on("idle", () => {
       if (!loadedRef.current) return;
       if (!map.getSource("marches")) {
-        drawRoutes(map, marchesRef.current, markersRef, langRef.current);
+        drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, langRef.current);
       }
     });
 
@@ -158,21 +180,21 @@ export function MapView({ marches }: { marches: MarchView[] }) {
     };
   }, []);
 
-  // Redraw whenever the events change. Draw as soon as the style is ready by
-  // any measure (our load flag, or MapLibre reporting the style loaded).
+  // Redraw whenever the events or chips change. Draw as soon as the style is
+  // ready by any measure (our load flag, or MapLibre reporting style loaded).
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     if (loadedRef.current || map.isStyleLoaded()) {
       loadedRef.current = true;
-      drawRoutes(map, marches, markersRef, i18n.language);
+      drawRoutes(map, marches, chips, markersRef, i18n.language);
     } else {
       map.once("idle", () => {
         loadedRef.current = true;
-        drawRoutes(map, marches, markersRef, i18n.language);
+        drawRoutes(map, marches, chips, markersRef, i18n.language);
       });
     }
-  }, [marches, i18n.language]);
+  }, [marches, chips, i18n.language]);
 
   // data-lenis-prevent: let wheel events zoom the map instead of scrolling the page.
   return <div ref={containerRef} className="map-view" data-lenis-prevent />;

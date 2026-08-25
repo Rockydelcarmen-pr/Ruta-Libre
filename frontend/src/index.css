@@ -366,6 +366,7 @@ body {
 }
 .march-marker-start { background: var(--green); }
 .march-marker-end { background: var(--red); }
+.chip-marker { background: var(--green); width: 16px; height: 16px; font-size: 9px; }
 .march-date-bubble {
   font-family: var(--font-display); font-weight: 700; font-size: 11px;
   color: var(--ink); background: var(--surface);

@@ -2,12 +2,17 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, dropChip, getChips, getParking, takeChip } from "../lib/api";
 import { getDeviceToken } from "../lib/device";
+import { distanceToRouteMeters } from "../lib/geo";
 import type { Chip, ParkingSpot } from "../lib/types";
 import type { MarchView } from "../lib/sampleProtests";
 import { PinPickerMap } from "./PinPickerMap";
 
 type Pt = [number, number];
 type Stage = "idle" | "locating" | "placing" | "submitting";
+
+/** Reports must come from within this distance of the route itself — this is
+    a report-parking-here feature, not a plan-ahead-from-home one. */
+const MAX_REPORT_DISTANCE_M = 1000;
 
 function minutesAgo(iso: string): number {
   return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -28,9 +33,16 @@ function reportWindow(m: MarchView): { opensAt: Date; closesAt: Date } | null {
   };
 }
 
-export function ParkingSection({ march }: { march: MarchView }) {
+export function ParkingSection({
+  march,
+  onChipsChange,
+}: {
+  march: MarchView;
+  onChipsChange?: (chips: Chip[]) => void;
+}) {
   const { t } = useTranslation();
   const start = march.route_geojson?.coordinates[0];
+  const route = march.route_geojson?.coordinates;
 
   const [spots, setSpots] = useState<ParkingSpot[]>([]);
   const [chips, setChips] = useState<Chip[]>([]);
@@ -47,8 +59,10 @@ export function ParkingSection({ march }: { march: MarchView }) {
     const [lng, lat] = start;
     Promise.all([getParking(lat, lng), getChips(lat, lng)])
       .then(([p, c]) => {
+        const available = c.chips.filter((chip) => chip.status === "available");
         setSpots(p.spots);
-        setChips(c.chips.filter((chip) => chip.status === "available"));
+        setChips(available);
+        onChipsChange?.(available);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
@@ -77,7 +91,16 @@ export function ParkingSection({ march }: { march: MarchView }) {
     setStage("locating");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setPin([pos.coords.longitude, pos.coords.latitude]);
+        const { latitude, longitude } = pos.coords;
+        if (
+          route &&
+          distanceToRouteMeters(latitude, longitude, route) > MAX_REPORT_DISTANCE_M
+        ) {
+          setError(t("parking.tooFar"));
+          setStage("idle");
+          return;
+        }
+        setPin([longitude, latitude]);
         setStage("placing");
       },
       () => {
@@ -119,7 +142,11 @@ export function ParkingSection({ march }: { march: MarchView }) {
     try {
       const token = await getDeviceToken();
       await takeChip(token, id);
-      setChips((prev) => prev.filter((c) => c.id !== id));
+      setChips((prev) => {
+        const next = prev.filter((c) => c.id !== id);
+        onChipsChange?.(next);
+        return next;
+      });
     } catch {
       /* best-effort; the chip will still expire on its own */
     }
