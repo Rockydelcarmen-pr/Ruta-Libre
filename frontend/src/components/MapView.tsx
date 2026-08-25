@@ -11,7 +11,7 @@ import {
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection, LineString } from "geojson";
 import type { MarchView } from "../lib/sampleProtests";
-import { MAP_STYLE, SAN_JUAN } from "../lib/mapStyle";
+import { mapStyle, SAN_JUAN } from "../lib/mapStyle";
 
 function dateLabel(eventDate: string, lang: string): string {
   const d = new Date(`${eventDate}T00:00:00`);
@@ -126,7 +126,7 @@ export function MapView({ marches }: { marches: MarchView[] }) {
     if (!containerRef.current) return;
     const map = new MLMap({
       container: containerRef.current,
-      style: MAP_STYLE,
+      style: mapStyle(),
       center: SAN_JUAN,
       zoom: 13,
       attributionControl: { compact: true },

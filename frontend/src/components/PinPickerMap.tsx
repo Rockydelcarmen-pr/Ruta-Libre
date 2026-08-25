@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Map as MLMap, Marker, NavigationControl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { MAP_STYLE } from "../lib/mapStyle";
+import { mapStyle } from "../lib/mapStyle";
 
 type Pt = [number, number];
 
@@ -26,7 +26,7 @@ export function PinPickerMap({
     if (!containerRef.current) return;
     const map = new MLMap({
       container: containerRef.current,
-      style: MAP_STYLE,
+      style: mapStyle(),
       center,
       zoom: 17,
       attributionControl: { compact: true },

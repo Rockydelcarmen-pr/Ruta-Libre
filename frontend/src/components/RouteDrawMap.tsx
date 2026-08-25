@@ -8,7 +8,7 @@ import {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection } from "geojson";
-import { MAP_STYLE, SAN_JUAN } from "../lib/mapStyle";
+import { mapStyle, SAN_JUAN } from "../lib/mapStyle";
 
 type Pt = [number, number];
 
@@ -64,7 +64,7 @@ export function RouteDrawMap({
     if (!containerRef.current) return;
     const map = new MLMap({
       container: containerRef.current,
-      style: MAP_STYLE,
+      style: mapStyle(),
       center: SAN_JUAN,
       zoom: 14,
       attributionControl: { compact: true },
