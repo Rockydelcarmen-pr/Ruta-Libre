@@ -1,8 +1,6 @@
-import { useTranslation } from "react-i18next";
 import type { Theme } from "../lib/theme";
 import { Brand } from "./Brand";
-import { LanguageToggle } from "./LanguageToggle";
-import { ThemeToggle } from "./ThemeToggle";
+import { SettingsMenu } from "./SettingsMenu";
 
 interface Props {
   theme: Theme;
@@ -17,21 +15,17 @@ export function Header({
   organizerActive,
   onToggleOrganizer,
 }: Props) {
-  const { t } = useTranslation();
   return (
     <header className="site-header">
       <div className="container site-header-inner">
         <Brand />
         <div className="header-controls">
-          <button
-            type="button"
-            className="org-link"
-            onClick={onToggleOrganizer}
-          >
-            {organizerActive ? t("header.backToFeed") : t("header.organizer")}
-          </button>
-          <LanguageToggle />
-          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          <SettingsMenu
+            theme={theme}
+            onToggleTheme={onToggleTheme}
+            organizerActive={organizerActive}
+            onToggleOrganizer={onToggleOrganizer}
+          />
         </div>
       </div>
     </header>

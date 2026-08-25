@@ -209,6 +209,42 @@ body {
 .icon-btn:hover { background: rgba(255,255,255,.12); }
 .icon-btn:focus-visible { outline: 2px solid var(--flag-blue); outline-offset: 1px; }
 
+/* Settings menu (theme/language/organizer/help), dropped from the header icon */
+.settings-menu { position: relative; }
+.settings-panel {
+  position: fixed; z-index: 100;
+  min-width: 220px;
+  background: var(--surface); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 6px;
+  box-shadow: 5px 5px 0 var(--red);
+  padding: 10px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 4px 2px;
+}
+.settings-row-label {
+  font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .03em; font-size: 12px; color: var(--muted);
+}
+.settings-row .icon-btn {
+  border-color: var(--ink); color: var(--ink);
+}
+.settings-row .icon-btn:hover { background: var(--hair); }
+.settings-row .segmented { border-color: var(--ink); }
+.settings-row .segmented button { color: var(--ink); }
+.settings-row .segmented button + button { border-left-color: var(--ink); }
+.settings-row .segmented .segmented-on { background: var(--ink); color: var(--surface); }
+.settings-divider { height: 2px; background: var(--hair); margin: 6px 0; }
+.settings-item {
+  font: inherit; font-weight: 700; font-size: 13.5px; text-align: left;
+  color: var(--ink); background: transparent; border: 0; border-radius: 4px;
+  padding: 8px 6px; cursor: pointer;
+}
+.settings-item:hover { background: var(--hair); }
+.settings-item:focus-visible { outline: 2px solid var(--flag-blue); outline-offset: 1px; }
+
 /* ---------- Hero ---------- */
 .hero { padding: 26px 0 8px; position: relative; }
 /* Subtle halftone behind the headline (uses --ink so it works in both themes). */

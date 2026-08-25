@@ -1,7 +1,23 @@
 export const en = {
   brand: { tag: "Find and join protests · San Juan" },
   lang: { label: "Language", en: "EN", es: "ES" },
-  theme: { toLight: "Light mode", toDark: "Dark mode" },
+  theme: { label: "Theme", toLight: "Light mode", toDark: "Dark mode" },
+  menu: {
+    label: "Menu",
+    howTo: "How to use this app",
+    about: "About us",
+    howToTag: "Getting started",
+    howToHeading: "How to use Ruta Libre",
+    howToP1: "Browse upcoming marches on the home page, or search by name, cause, tag, or organizer. Each card shows the date, time, and route on a map.",
+    howToP2: "Tap \"I'm going\" to be counted, add the event to your calendar, or share it with a link. Open \"See more\" on any march to see the full route, streets, and nearby parking.",
+    howToP3: "Near the march itself? Check the parking section for legal spots and spots reported by others — and report one yourself if you see open parking, so people right behind you can find it.",
+    howToP4: "Organizers with an access key can sign in from this menu to publish and manage their own marches.",
+    aboutTag: "About",
+    aboutHeading: "About Ruta Libre",
+    aboutP1: "Ruta Libre is a one-woman project built to help people find protests and marches happening in Puerto Rico, and get there with the information they need — routes, times, causes, and parking.",
+    aboutP2: "The information here comes directly from organizers who choose to share it. If plans change, it can take a little while for that to be reflected here — always check each march's own official announcements too.",
+    aboutP3: "This project is still growing. Thank you for being here early.",
+  },
   hero: {
     kicker: "San Juan, Puerto Rico",
     titleLine1: "Find the protest.",
@@ -187,6 +203,7 @@ export const en = {
     loading: "Loading protests...",
     empty: "No upcoming protests are registered right now.",
     sampleNote: "Showing sample protests (the server is not connected yet).",
+    close: "Close",
   },
 };
 
