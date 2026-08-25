@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ApiError, dropChip, getChips, getParking, takeChip } from "../lib/api";
+import {
+  ApiError,
+  deleteChipAdmin,
+  dropChip,
+  getChips,
+  getParking,
+  takeChip,
+} from "../lib/api";
 import { getDeviceToken } from "../lib/device";
 import { distanceToRouteMeters } from "../lib/geo";
+import type { Auth } from "../hooks/useAuth";
 import type { Chip, ParkingSpot } from "../lib/types";
 import type { MarchView } from "../lib/sampleProtests";
 import { PinPickerMap } from "./PinPickerMap";
@@ -35,14 +43,17 @@ function reportWindow(m: MarchView): { opensAt: Date; closesAt: Date } | null {
 
 export function ParkingSection({
   march,
+  auth,
   onChipsChange,
 }: {
   march: MarchView;
+  auth?: Auth;
   onChipsChange?: (chips: Chip[]) => void;
 }) {
   const { t } = useTranslation();
   const start = march.route_geojson?.coordinates[0];
   const route = march.route_geojson?.coordinates;
+  const isAdmin = auth?.user?.role === "admin";
 
   const [spots, setSpots] = useState<ParkingSpot[]>([]);
   const [chips, setChips] = useState<Chip[]>([]);
@@ -152,6 +163,20 @@ export function ParkingSection({
     }
   };
 
+  const removeAsAdmin = async (id: string) => {
+    if (!auth?.token) return;
+    try {
+      await deleteChipAdmin(auth.token, id);
+      setChips((prev) => {
+        const next = prev.filter((c) => c.id !== id);
+        onChipsChange?.(next);
+        return next;
+      });
+    } catch {
+      setError(t("parking.reportError"));
+    }
+  };
+
   return (
     <div className="parking-section">
       <div className="lbl">{t("parking.heading")}</div>
@@ -178,6 +203,15 @@ export function ParkingSection({
               >
                 {t("parking.takeBtn")}
               </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  className="mini-btn danger"
+                  onClick={() => void removeAsAdmin(c.id)}
+                >
+                  {t("parking.removeBtn")}
+                </button>
+              )}
             </li>
           ))}
         </ul>

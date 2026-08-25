@@ -48,6 +48,7 @@ export const es: Resources = {
     empty: "Aún no se ha reportado estacionamiento por aquí.",
     reportedAgo: "Visto hace {{minutes}}m",
     takeBtn: "Marcar ocupado",
+    removeBtn: "Eliminar",
     capacity: "Capacidad: {{count}}",
     unnamedSpot: "Estacionamiento",
     reportBtn: "Veo estacionamiento aquí",

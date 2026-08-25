@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Auth } from "../hooks/useAuth";
 import type { Chip, Lang } from "../lib/types";
 import type { MarchView } from "../lib/sampleProtests";
 import { MapView } from "./MapView";
@@ -47,7 +48,17 @@ function whenLabel(m: MarchView, lang: Lang): string {
   return time ? `${dateStr} · ${time}` : dateStr;
 }
 
-export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
+export function MarchCard({
+  march,
+  lang,
+  auth,
+  onChipsChanged,
+}: {
+  march: MarchView;
+  lang: Lang;
+  auth?: Auth;
+  onChipsChanged?: () => void;
+}) {
   const { t } = useTranslation();
   const [going, setGoing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -257,7 +268,14 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
             </>
           )}
           {march.route_geojson && (
-            <ParkingSection march={march} onChipsChange={setChips} />
+            <ParkingSection
+              march={march}
+              auth={auth}
+              onChipsChange={(next) => {
+                setChips(next);
+                onChipsChanged?.();
+              }}
+            />
           )}
         </div>
       )}

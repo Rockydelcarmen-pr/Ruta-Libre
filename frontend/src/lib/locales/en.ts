@@ -46,6 +46,7 @@ export const en = {
     empty: "No parking reported near here yet.",
     reportedAgo: "Spotted {{minutes}}m ago",
     takeBtn: "Mark taken",
+    removeBtn: "Remove",
     capacity: "Capacity: {{count}}",
     unnamedSpot: "Parking spot",
     reportBtn: "I see parking here",
