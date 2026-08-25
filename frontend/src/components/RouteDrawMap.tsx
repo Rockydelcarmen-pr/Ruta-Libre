@@ -71,6 +71,7 @@ export function RouteDrawMap({
     });
     map.addControl(new NavigationControl(), "top-right");
     mapRef.current = map;
+    map.on("error", (e) => console.error("[maplibre]", e.error));
 
     map.on("load", () => {
       map.addSource("draft", { type: "geojson", data: toData(pointsRef.current) });

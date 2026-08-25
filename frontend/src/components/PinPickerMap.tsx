@@ -33,6 +33,7 @@ export function PinPickerMap({
     });
     map.addControl(new NavigationControl(), "top-right");
     mapRef.current = map;
+    map.on("error", (e) => console.error("[maplibre]", e.error));
 
     const el = document.createElement("div");
     el.className = "march-marker march-marker-start";

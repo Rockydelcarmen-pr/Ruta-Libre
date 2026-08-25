@@ -133,6 +133,7 @@ export function MapView({ marches }: { marches: MarchView[] }) {
     });
     map.addControl(new NavigationControl(), "top-right");
     mapRef.current = map;
+    map.on("error", (e) => console.error("[maplibre]", e.error));
 
     map.on("load", () => {
       loadedRef.current = true;
