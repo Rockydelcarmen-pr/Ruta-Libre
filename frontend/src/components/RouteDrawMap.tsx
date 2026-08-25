@@ -57,6 +57,8 @@ export function RouteDrawMap({
   const removeRef = useRef(onRemovePoint);
   removeRef.current = onRemovePoint;
   const draggingIndexRef = useRef<number | null>(null);
+  const pointsRef = useRef(points);
+  pointsRef.current = points;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -71,7 +73,7 @@ export function RouteDrawMap({
     mapRef.current = map;
 
     map.on("load", () => {
-      map.addSource("draft", { type: "geojson", data: toData([]) });
+      map.addSource("draft", { type: "geojson", data: toData(pointsRef.current) });
       map.addLayer({
         id: "draft-line",
         type: "line",
@@ -101,6 +103,13 @@ export function RouteDrawMap({
         },
       });
       readyRef.current = true;
+
+      if (autoFit && !fittedRef.current && pointsRef.current.length >= 1) {
+        const bounds = new LngLatBounds();
+        pointsRef.current.forEach((p) => bounds.extend(p));
+        map.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: 0 });
+        fittedRef.current = true;
+      }
     });
 
     // Clicking an existing point starts a drag instead of adding a new one.
