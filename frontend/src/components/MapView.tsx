@@ -182,16 +182,20 @@ export function MapView({
 
   // Redraw whenever the events or chips change. Draw as soon as the style is
   // ready by any measure (our load flag, or MapLibre reporting style loaded).
+  // Both branches read from the refs, not the closed-over marches/chips, so a
+  // deferred once("idle") callback registered on an earlier (e.g. still-empty
+  // chips) render can't fire later with stale data and wipe out markers a
+  // subsequent render already drew correctly.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     if (loadedRef.current || map.isStyleLoaded()) {
       loadedRef.current = true;
-      drawRoutes(map, marches, chips, markersRef, i18n.language);
+      drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, i18n.language);
     } else {
       map.once("idle", () => {
         loadedRef.current = true;
-        drawRoutes(map, marches, chips, markersRef, i18n.language);
+        drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, i18n.language);
       });
     }
   }, [marches, chips, i18n.language]);
