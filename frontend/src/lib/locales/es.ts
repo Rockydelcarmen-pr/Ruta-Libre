@@ -84,7 +84,7 @@ export const es: Resources = {
     clear: "Limpiar filtros",
     none: "Ninguna protesta coincide con tu búsqueda.",
   },
-  header: { organizer: "Organizadores", backToFeed: "Volver al feed" },
+  header: { organizer: "Organizadores", backToFeed: "Volver al feed", home: "Inicio" },
   org: {
     eyebrow: "Solo organizadores",
     dashboard: "Herramientas de organizador",
@@ -135,6 +135,7 @@ export const es: Resources = {
     delete: "Eliminar",
     deleteConfirm: "¿Eliminar {{name}}? Esto no se puede deshacer.",
     deleteProtestConfirm: "¿Eliminar «{{title}}»? Esto no se puede deshacer.",
+    deleteFailed: "No se pudo eliminar la manifestación.",
     loginHeading: "Acceso de organizadores",
     loginNote:
       "Para organizaciones aprobadas y la administración. No hace falta para ver las protestas.",

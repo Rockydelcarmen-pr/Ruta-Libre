@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { deleteProtest, getManagedProtests } from "../lib/api";
+import { ApiError, deleteProtest, getManagedProtests } from "../lib/api";
 import type { Lang, Protest } from "../lib/types";
 
 function isMock(tag: string): boolean {
@@ -34,6 +34,7 @@ export function PublishedProtests({
   const [items, setItems] = useState<Protest[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -47,9 +48,16 @@ export function PublishedProtests({
     if (!window.confirm(t("org.deleteProtestConfirm", { title: p.title ?? "" })))
       return;
     setBusyId(p.id);
+    setError(null);
     try {
       await deleteProtest(token, p.id);
       setItems((prev) => prev.filter((x) => x.id !== p.id));
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message || t("org.deleteFailed")
+          : t("org.deleteFailed"),
+      );
     } finally {
       setBusyId(null);
     }
@@ -72,6 +80,7 @@ export function PublishedProtests({
         {t("org.manageNote")}
       </p>
 
+      {error && <p className="error-text">{error}</p>}
       {loading && <p className="muted">{t("common.loading")}</p>}
       {!loading && items.length === 0 && (
         <p className="muted">{t("org.publishedEmpty")}</p>

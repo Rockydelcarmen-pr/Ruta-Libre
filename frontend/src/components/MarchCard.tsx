@@ -82,10 +82,6 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
 
   return (
     <article className={featured ? "card feature" : "card"}>
-      {featured && march.cause && (
-        <div className="feature-cause">{march.cause}</div>
-      )}
-
       <div>
         <span className={statusApproved ? "pill red" : "pill blue"}>
           {statusApproved ? t("feed.approved") : t("feed.upcoming")}
@@ -108,7 +104,7 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
         <div className="by-orgs">{march.organizer_names.join(" · ")}</div>
       )}
 
-      {!featured && march.cause && (
+      {march.cause && (
         <p className="cause-line">
           <b>{t("protest.cause")}:</b> {march.cause}
         </p>

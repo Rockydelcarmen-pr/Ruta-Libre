@@ -83,7 +83,7 @@ export const en = {
     clear: "Clear filters",
     none: "No protests match your search.",
   },
-  header: { organizer: "Organizer", backToFeed: "Back to feed" },
+  header: { organizer: "Organizer", backToFeed: "Back to feed", home: "Home" },
   org: {
     eyebrow: "Organizers only",
     dashboard: "Organizer tools",
@@ -134,6 +134,7 @@ export const en = {
     delete: "Delete",
     deleteConfirm: "Delete {{name}}? This cannot be undone.",
     deleteProtestConfirm: "Delete “{{title}}”? This cannot be undone.",
+    deleteFailed: "Could not delete the protest.",
     loginHeading: "Organizer sign in",
     loginNote:
       "For approved organizations and the admin. Not needed to browse protests.",
