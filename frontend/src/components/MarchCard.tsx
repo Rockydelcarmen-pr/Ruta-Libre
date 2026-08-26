@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Lang } from "../lib/types";
+import type { Auth } from "../hooks/useAuth";
+import type { Chip, Lang } from "../lib/types";
 import type { MarchView } from "../lib/sampleProtests";
 import { MapView } from "./MapView";
 import { ParkingSection } from "./ParkingSection";
@@ -47,12 +48,23 @@ function whenLabel(m: MarchView, lang: Lang): string {
   return time ? `${dateStr} · ${time}` : dateStr;
 }
 
-export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
+export function MarchCard({
+  march,
+  lang,
+  auth,
+  onChipsChanged,
+}: {
+  march: MarchView;
+  lang: Lang;
+  auth?: Auth;
+  onChipsChanged?: () => void;
+}) {
   const { t } = useTranslation();
   const [going, setGoing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
   const [streetsOpen, setStreetsOpen] = useState(false);
+  const [chips, setChips] = useState<Chip[]>([]);
 
   const baseGoing = march.going ?? 0;
   const count = baseGoing + (going ? 1 : 0);
@@ -193,7 +205,7 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
         <div className="details">
           {march.route_geojson && (
             <div className="card-map">
-              <MapView marches={[march]} />
+              <MapView marches={[march]} chips={chips} />
             </div>
           )}
           {march.streets.length > 0 && (
@@ -251,7 +263,16 @@ export function MarchCard({ march, lang }: { march: MarchView; lang: Lang }) {
               </div>
             </>
           )}
-          {march.route_geojson && <ParkingSection march={march} />}
+          {march.route_geojson && (
+            <ParkingSection
+              march={march}
+              auth={auth}
+              onChipsChange={(next) => {
+                setChips(next);
+                onChipsChanged?.();
+              }}
+            />
+          )}
         </div>
       )}
     </article>

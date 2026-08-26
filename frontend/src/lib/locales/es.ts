@@ -3,7 +3,23 @@ import type { Resources } from "./en";
 export const es: Resources = {
   brand: { tag: "Encuentra y únete a protestas · San Juan" },
   lang: { label: "Idioma", en: "EN", es: "ES" },
-  theme: { toLight: "Modo claro", toDark: "Modo oscuro" },
+  theme: { label: "Tema", toLight: "Modo claro", toDark: "Modo oscuro" },
+  menu: {
+    label: "Menú",
+    howTo: "Cómo usar esta app",
+    about: "Sobre nosotros",
+    howToTag: "Primeros pasos",
+    howToHeading: "Cómo usar Ruta Libre",
+    howToP1: "Explora las próximas manifestaciones en la página principal, o busca por nombre, causa, etiqueta u organizador. Cada tarjeta muestra la fecha, hora y ruta en un mapa.",
+    howToP2: "Presiona \"Voy a asistir\" para contarte, agrega el evento a tu calendario, o compártelo con un enlace. Abre \"Ver más\" en cualquier manifestación para ver la ruta completa, las calles y el estacionamiento cercano.",
+    howToP3: "¿Estás cerca de la manifestación? Revisa la sección de estacionamiento para ver espacios legales y los reportados por otras personas — y reporta uno tú mismo si ves estacionamiento disponible, para que quienes vengan detrás de ti lo encuentren.",
+    howToP4: "Los organizadores con una clave de acceso pueden iniciar sesión desde este menú para publicar y gestionar sus propias manifestaciones.",
+    aboutTag: "Sobre nosotros",
+    aboutHeading: "Sobre Ruta Libre",
+    aboutP1: "Ruta Libre es un proyecto de una sola persona, creado para ayudar a la gente a encontrar protestas y manifestaciones en Puerto Rico, y llegar con la información que necesitan — rutas, horarios, causas y estacionamiento.",
+    aboutP2: "La información aquí viene directamente de los organizadores que eligen compartirla. Si los planes cambian, puede tomar un poco de tiempo que se refleje aquí — siempre revisa también los anuncios oficiales de cada manifestación.",
+    aboutP3: "Este proyecto todavía está creciendo. Gracias por estar aquí temprano.",
+  },
   hero: {
     kicker: "San Juan, Puerto Rico",
     titleLine1: "Encuentra la manifestación.",
@@ -48,6 +64,7 @@ export const es: Resources = {
     empty: "Aún no se ha reportado estacionamiento por aquí.",
     reportedAgo: "Visto hace {{minutes}}m",
     takeBtn: "Marcar ocupado",
+    removeBtn: "Eliminar",
     capacity: "Capacidad: {{count}}",
     unnamedSpot: "Estacionamiento",
     reportBtn: "Veo estacionamiento aquí",
@@ -64,6 +81,8 @@ export const es: Resources = {
     geoDenied:
       "No se pudo obtener tu ubicación. Activa el acceso a tu ubicación para reportar estacionamiento.",
     geoUnsupported: "Tu navegador no soporta compartir ubicación.",
+    tooFar:
+      "Estás demasiado lejos de esta manifestación para reportar estacionamiento aquí — repórtalo solo desde el lugar.",
     gpsNote: "Los reportes son anónimos y expiran automáticamente.",
   },
   nav: { marches: "Eventos", orgs: "Organizaciones" },
@@ -186,5 +205,6 @@ export const es: Resources = {
     loading: "Cargando protestas...",
     empty: "No hay protestas próximas registradas por ahora.",
     sampleNote: "Mostrando protestas de ejemplo (el servidor aún no está conectado).",
+    close: "Cerrar",
   },
 };

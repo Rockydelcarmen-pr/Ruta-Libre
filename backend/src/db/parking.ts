@@ -146,3 +146,9 @@ export async function deleteChip(
   );
   return (res.rowCount ?? 0) > 0;
 }
+
+/** Admin override: delete any chip regardless of who reported it or where. */
+export async function deleteChipAsAdmin(id: string): Promise<boolean> {
+  const res = await query("delete from parking_chips where id = $1", [id]);
+  return (res.rowCount ?? 0) > 0;
+}

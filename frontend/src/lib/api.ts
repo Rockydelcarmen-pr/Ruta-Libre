@@ -341,3 +341,14 @@ export function deleteChip(
     headers: deviceHeaders(deviceToken),
   });
 }
+
+/** Admin override: remove any chip regardless of who reported it or where. */
+export function deleteChipAdmin(
+  token: string,
+  id: string,
+): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/chips/${id}/admin`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${token}` },
+  });
+}

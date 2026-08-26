@@ -15,8 +15,15 @@ export const OSM_STYLE: StyleSpecification = {
   layers: [{ id: "osm", type: "raster", source: "osm" }],
 };
 
-export const MAP_STYLE: string | StyleSpecification =
-  import.meta.env.VITE_MAP_STYLE_URL || OSM_STYLE;
+const styleUrl = import.meta.env.VITE_MAP_STYLE_URL;
+
+/** MapLibre mutates the style object it's given, so every map instance needs
+    its own copy — sharing one object across multiple maps on the same page
+    (e.g. the overview map and each event's mini-map) corrupts it after the
+    first instance loads. */
+export function mapStyle(): string | StyleSpecification {
+  return styleUrl || structuredClone(OSM_STYLE);
+}
 
 /** San Juan, Puerto Rico. */
 export const SAN_JUAN: [number, number] = [-66.106, 18.4655];

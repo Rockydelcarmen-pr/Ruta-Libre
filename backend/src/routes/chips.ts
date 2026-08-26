@@ -3,6 +3,7 @@ import { z } from "zod";
 import { config } from "../config.js";
 import {
   deleteChip,
+  deleteChipAsAdmin,
   insertChip,
   markChipTaken,
   nearbyLiveChips,
@@ -128,6 +129,18 @@ export async function chipRoutes(app: FastifyInstance): Promise<void> {
       const { id } = req.params as { id: string };
       const ok = await deleteChip(id, req.deviceId!);
       if (!ok) return reply.code(404).send({ error: "not_found_or_forbidden" });
+      return reply.send({ ok: true });
+    },
+  );
+
+  // Admin: remove any chip, regardless of who reported it or where it is.
+  app.delete(
+    "/api/chips/:id/admin",
+    { preHandler: app.requireRole(["admin"]) },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const ok = await deleteChipAsAdmin(id);
+      if (!ok) return reply.code(404).send({ error: "not_found" });
       return reply.send({ ok: true });
     },
   );

@@ -8,7 +8,7 @@ import {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection } from "geojson";
-import { MAP_STYLE, SAN_JUAN } from "../lib/mapStyle";
+import { mapStyle, SAN_JUAN } from "../lib/mapStyle";
 
 type Pt = [number, number];
 
@@ -57,21 +57,24 @@ export function RouteDrawMap({
   const removeRef = useRef(onRemovePoint);
   removeRef.current = onRemovePoint;
   const draggingIndexRef = useRef<number | null>(null);
+  const pointsRef = useRef(points);
+  pointsRef.current = points;
 
   useEffect(() => {
     if (!containerRef.current) return;
     const map = new MLMap({
       container: containerRef.current,
-      style: MAP_STYLE,
+      style: mapStyle(),
       center: SAN_JUAN,
       zoom: 14,
       attributionControl: { compact: true },
     });
     map.addControl(new NavigationControl(), "top-right");
     mapRef.current = map;
+    map.on("error", (e) => console.error("[maplibre]", e.error));
 
     map.on("load", () => {
-      map.addSource("draft", { type: "geojson", data: toData([]) });
+      map.addSource("draft", { type: "geojson", data: toData(pointsRef.current) });
       map.addLayer({
         id: "draft-line",
         type: "line",
@@ -101,6 +104,13 @@ export function RouteDrawMap({
         },
       });
       readyRef.current = true;
+
+      if (autoFit && !fittedRef.current && pointsRef.current.length >= 1) {
+        const bounds = new LngLatBounds();
+        pointsRef.current.forEach((p) => bounds.extend(p));
+        map.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: 0 });
+        fittedRef.current = true;
+      }
     });
 
     // Clicking an existing point starts a drag instead of adding a new one.

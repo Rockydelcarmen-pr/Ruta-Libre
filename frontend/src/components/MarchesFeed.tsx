@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useProtests } from "../hooks/useProtests";
-import type { Lang } from "../lib/types";
+import { getChips } from "../lib/api";
+import type { Auth } from "../hooks/useAuth";
+import type { Chip, Lang } from "../lib/types";
 import { MarchCard } from "./MarchCard";
 import { MapView } from "./MapView";
 
@@ -11,13 +13,48 @@ function unique(values: string[]): string[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
 }
 
-export function MarchesFeed({ lang }: { lang: Lang }) {
+export function MarchesFeed({ lang, auth }: { lang: Lang; auth: Auth }) {
   const { t } = useTranslation();
   const { marches, loading, usingSample } = useProtests(lang);
 
   const [q, setQ] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [orgs, setOrgs] = useState<string[]>([]);
+  const [chips, setChips] = useState<Chip[]>([]);
+  const [chipsVersion, setChipsVersion] = useState(0);
+
+  // Pull live parking chips for every march's route so they show as pins on
+  // the overview map too, not just each event's own expanded mini-map.
+  // Re-runs when a card reports its own chip list changed (drop/take/admin
+  // remove), so the overview map doesn't go stale until the next full reload.
+  useEffect(() => {
+    const withRoutes = marches.filter((m) => m.route_geojson);
+    if (withRoutes.length === 0) {
+      setChips([]);
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      withRoutes.map((m) => {
+        const start = m.route_geojson!.coordinates[0];
+        if (!start) return Promise.resolve({ chips: [] as Chip[] });
+        const [lng, lat] = start;
+        return getChips(lat, lng).catch(() => ({ chips: [] as Chip[] }));
+      }),
+    ).then((results) => {
+      if (cancelled) return;
+      const byId = new Map<string, Chip>();
+      for (const { chips: found } of results) {
+        for (const c of found) {
+          if (c.status === "available") byId.set(c.id, c);
+        }
+      }
+      setChips([...byId.values()]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [marches, chipsVersion]);
 
   const allTags = useMemo(
     () => unique(marches.flatMap((m) => m.tags)),
@@ -127,7 +164,7 @@ export function MarchesFeed({ lang }: { lang: Lang }) {
 
       {!loading && filtered.length > 0 && (
         <>
-          <MapView marches={filtered} />
+          <MapView marches={filtered} chips={chips} />
           {usingDemoMap && <p className="map-note">{t("feed.mapNote")}</p>}
         </>
       )}
@@ -144,6 +181,8 @@ export function MarchesFeed({ lang }: { lang: Lang }) {
             key={m.id}
             march={i === 0 ? { ...m, featured: true } : m}
             lang={lang}
+            auth={auth}
+            onChipsChanged={() => setChipsVersion((v) => v + 1)}
           />
         ))}
 

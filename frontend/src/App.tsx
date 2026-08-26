@@ -70,7 +70,7 @@ export function App() {
                   </h1>
                   <p className="lede">{t("hero.lede")}</p>
                 </section>
-                <MarchesFeed key={reloadKey} lang={lang} />
+                <MarchesFeed key={reloadKey} lang={lang} auth={auth} />
               </>
             ) : (
               <OrganizationsView lang={lang} />
