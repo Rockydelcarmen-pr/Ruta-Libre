@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Auth } from "../hooks/useAuth";
 import type { Chip, Lang } from "../lib/types";
@@ -36,6 +36,20 @@ export function MarchesFeed({
   const { t } = useTranslation();
   const [tags, setTags] = useState<string[]>([]);
   const [orgs, setOrgs] = useState<string[]>([]);
+  const lastTapRef = useRef(0);
+
+  // Manual double-tap detection: a single tap on the map preview is too easy
+  // to trigger by accident while scrolling past it, so require two taps
+  // close together (native onDoubleClick doesn't fire for touch).
+  const handleMapPreviewTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 400) {
+      lastTapRef.current = 0;
+      onOpenMap();
+    } else {
+      lastTapRef.current = now;
+    }
+  };
 
   const allTags = useMemo(
     () => unique(marches.flatMap((m) => m.tags)),
@@ -81,11 +95,13 @@ export function MarchesFeed({
           <button
             type="button"
             className="map-preview"
-            onClick={onOpenMap}
-            aria-label={t("feed.openMap", "Open full map")}
+            onClick={handleMapPreviewTap}
+            aria-label={t("feed.openMap", "Double-tap to open full map")}
           >
             <MapView marches={filtered} chips={chips} interactive={false} />
-            <span className="map-preview-hint">{t("feed.openMap", "Tap to explore map")}</span>
+            <span className="map-preview-hint">
+              {t("feed.openMap", "Double-tap to explore map")}
+            </span>
           </button>
           {usingDemoMap && <p className="map-note">{t("feed.mapNote")}</p>}
         </>
