@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useProtests } from "../hooks/useProtests";
-import { getChips } from "../lib/api";
 import type { Auth } from "../hooks/useAuth";
 import type { Chip, Lang } from "../lib/types";
+import type { MarchView } from "../lib/sampleProtests";
 import { MarchCard } from "./MarchCard";
 import { MapView } from "./MapView";
 
@@ -13,48 +12,28 @@ function unique(values: string[]): string[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
 }
 
-export function MarchesFeed({ lang, auth }: { lang: Lang; auth: Auth }) {
+export function MarchesFeed({
+  lang,
+  auth,
+  marches,
+  loading,
+  usingSample,
+  chips,
+  onChipsChanged,
+  q,
+}: {
+  lang: Lang;
+  auth: Auth;
+  marches: MarchView[];
+  loading: boolean;
+  usingSample: boolean;
+  chips: Chip[];
+  onChipsChanged: () => void;
+  q: string;
+}) {
   const { t } = useTranslation();
-  const { marches, loading, usingSample } = useProtests(lang);
-
-  const [q, setQ] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [orgs, setOrgs] = useState<string[]>([]);
-  const [chips, setChips] = useState<Chip[]>([]);
-  const [chipsVersion, setChipsVersion] = useState(0);
-
-  // Pull live parking chips for every march's route so they show as pins on
-  // the overview map too, not just each event's own expanded mini-map.
-  // Re-runs when a card reports its own chip list changed (drop/take/admin
-  // remove), so the overview map doesn't go stale until the next full reload.
-  useEffect(() => {
-    const withRoutes = marches.filter((m) => m.route_geojson);
-    if (withRoutes.length === 0) {
-      setChips([]);
-      return;
-    }
-    let cancelled = false;
-    Promise.all(
-      withRoutes.map((m) => {
-        const start = m.route_geojson!.coordinates[0];
-        if (!start) return Promise.resolve({ chips: [] as Chip[] });
-        const [lng, lat] = start;
-        return getChips(lat, lng).catch(() => ({ chips: [] as Chip[] }));
-      }),
-    ).then((results) => {
-      if (cancelled) return;
-      const byId = new Map<string, Chip>();
-      for (const { chips: found } of results) {
-        for (const c of found) {
-          if (c.status === "available") byId.set(c.id, c);
-        }
-      }
-      setChips([...byId.values()]);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [marches, chipsVersion]);
 
   const allTags = useMemo(
     () => unique(marches.flatMap((m) => m.tags)),
@@ -65,10 +44,18 @@ export function MarchesFeed({ lang, auth }: { lang: Lang; auth: Auth }) {
     [marches],
   );
 
+  const toggle = (
+    value: string,
+    list: string[],
+    set: (v: string[]) => void,
+  ) => {
+    set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
+  };
+
   const filtered = useMemo(() => {
     const text = q.trim().toLowerCase();
     return marches.filter((m) => {
-      const hay = [m.title, m.cause, ...m.tags, ...m.organizer_names]
+      const hay = [m.title, m.cause, m.location, ...m.tags, ...m.organizer_names]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -80,87 +67,12 @@ export function MarchesFeed({ lang, auth }: { lang: Lang; auth: Auth }) {
     });
   }, [marches, q, tags, orgs]);
 
-  const toggle = (
-    value: string,
-    list: string[],
-    set: (v: string[]) => void,
-  ) => {
-    set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
-  };
-
-  const hasFilters = q !== "" || tags.length > 0 || orgs.length > 0;
-  const clearAll = () => {
-    setQ("");
-    setTags([]);
-    setOrgs([]);
-  };
-
   return (
     <section className="feed container" aria-labelledby="feed-h">
       <div className="eyebrow">{t("feed.eyebrow")}</div>
       <h2 id="feed-h">{t("feed.heading")}</h2>
 
-      {!loading && marches.length > 0 && (
-        <div className="filters">
-          <input
-            className="text-input search"
-            type="search"
-            placeholder={t("search.placeholder")}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            aria-label={t("search.placeholder")}
-          />
-
-          {allTags.length > 0 && (
-            <div className="filter-group">
-              <span className="filter-label">{t("search.topics")}</span>
-              <div className="filter-chips">
-                {allTags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    className={tags.includes(tag) ? "filter-chip on" : "filter-chip"}
-                    aria-pressed={tags.includes(tag)}
-                    onClick={() => toggle(tag, tags, setTags)}
-                  >
-                    #{tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {allOrgs.length > 0 && (
-            <div className="filter-group">
-              <span className="filter-label">{t("search.orgs")}</span>
-              <div className="filter-chips">
-                {allOrgs.map((org) => (
-                  <button
-                    key={org}
-                    type="button"
-                    className={orgs.includes(org) ? "filter-chip on" : "filter-chip"}
-                    aria-pressed={orgs.includes(org)}
-                    onClick={() => toggle(org, orgs, setOrgs)}
-                  >
-                    {org}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {hasFilters && (
-            <div className="filter-summary">
-              <span className="muted">
-                {filtered.length} {t("search.results")}
-              </span>
-              <button type="button" className="mini-btn" onClick={clearAll}>
-                {t("search.clear")}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {loading && <p className="muted">{t("common.loading")}</p>}
 
       {!loading && filtered.length > 0 && (
         <>
@@ -169,22 +81,62 @@ export function MarchesFeed({ lang, auth }: { lang: Lang; auth: Auth }) {
         </>
       )}
 
-      {loading && <p className="muted">{t("common.loading")}</p>}
-
       {!loading && filtered.length === 0 && marches.length > 0 && (
         <p className="muted">{t("search.none")}</p>
       )}
 
-      {!loading &&
-        filtered.map((m, i) => (
-          <MarchCard
-            key={m.id}
-            march={i === 0 ? { ...m, featured: true } : m}
-            lang={lang}
-            auth={auth}
-            onChipsChanged={() => setChipsVersion((v) => v + 1)}
-          />
-        ))}
+      {!loading && filtered.length > 0 && (
+        <div className="carousel" role="list" aria-label={t("feed.heading")}>
+          {filtered.map((m, i) => (
+            <div className="carousel-item" role="listitem" key={m.id}>
+              <MarchCard
+                march={i === 0 ? { ...m, featured: true } : m}
+                lang={lang}
+                auth={auth}
+                onChipsChanged={onChipsChanged}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && allTags.length > 0 && (
+        <div className="carousel-group">
+          <span className="filter-label">{t("search.topics")}</span>
+          <div className="carousel-chips">
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className={tags.includes(tag) ? "filter-chip on" : "filter-chip"}
+                aria-pressed={tags.includes(tag)}
+                onClick={() => toggle(tag, tags, setTags)}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && allOrgs.length > 0 && (
+        <div className="carousel-group">
+          <span className="filter-label">{t("search.orgs")}</span>
+          <div className="carousel-chips">
+            {allOrgs.map((org) => (
+              <button
+                key={org}
+                type="button"
+                className={orgs.includes(org) ? "filter-chip on" : "filter-chip"}
+                aria-pressed={orgs.includes(org)}
+                onClick={() => toggle(org, orgs, setOrgs)}
+              >
+                {org}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!loading && usingSample && (
         <p className="muted" style={{ marginTop: 4 }}>

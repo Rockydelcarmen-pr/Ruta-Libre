@@ -11,16 +11,21 @@ export function SettingsMenu({
   onToggleTheme,
   organizerActive,
   onToggleOrganizer,
+  anchor = "top",
 }: {
   theme: Theme;
   onToggleTheme: () => void;
   organizerActive: boolean;
   onToggleOrganizer: () => void;
+  /** Whether the trigger button lives in the top header or the bottom app bar. */
+  anchor?: "top" | "bottom";
 }) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const [pos, setPos] = useState<
+    { top: number; right: number } | { bottom: number; right: number } | null
+  >(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const currentLang = i18n.language.startsWith("es") ? "es" : "en";
@@ -51,7 +56,14 @@ export function SettingsMenu({
   const toggleOpen = () => {
     if (!open && buttonRef.current) {
       const r = buttonRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+      if (anchor === "bottom") {
+        setPos({
+          bottom: window.innerHeight - r.top + 8,
+          right: window.innerWidth - r.right,
+        });
+      } else {
+        setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+      }
     }
     setOpen((o) => !o);
   };
@@ -61,7 +73,7 @@ export function SettingsMenu({
       <button
         ref={buttonRef}
         type="button"
-        className="icon-btn"
+        className={anchor === "bottom" ? "icon-btn icon-btn-bare" : "icon-btn"}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t("menu.label")}
@@ -82,7 +94,7 @@ export function SettingsMenu({
             className="settings-panel"
             role="menu"
             ref={panelRef}
-            style={{ top: pos.top, right: pos.right }}
+            style={pos}
           >
           <div className="settings-row">
             <span className="settings-row-label">{t("theme.label")}</span>

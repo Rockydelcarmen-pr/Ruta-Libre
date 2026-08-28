@@ -37,6 +37,7 @@ function drawRoutes(
   chips: Chip[],
   markersRef: { current: Marker[] },
   lang: string,
+  onSelect?: (id: string) => void,
 ): void {
   const data: FeatureCollection = {
     type: "FeatureCollection",
@@ -68,15 +69,18 @@ function drawRoutes(
     coords.forEach((c) => bounds.extend(c as [number, number]));
     any = true;
 
+    const select = () => onSelect?.(m.id);
+
     const start = coords[0] as [number, number];
     const startEl = document.createElement("div");
     startEl.className = "march-marker march-marker-start";
     startEl.textContent = "S";
-    startEl.title = "Start";
-    const startMarker = new Marker({ element: startEl })
-      .setLngLat(start)
-      .setPopup(new Popup({ offset: 14 }).setText(m.title ?? "Protest"))
-      .addTo(map);
+    startEl.title = m.title ?? "Start";
+    if (onSelect) {
+      startEl.style.cursor = "pointer";
+      startEl.addEventListener("click", select);
+    }
+    const startMarker = new Marker({ element: startEl }).setLngLat(start).addTo(map);
     markersRef.current.push(startMarker);
 
     const label = dateLabel(m.event_date, lang);
@@ -84,6 +88,11 @@ function drawRoutes(
       const dateEl = document.createElement("div");
       dateEl.className = "march-date-bubble";
       dateEl.textContent = label;
+      dateEl.title = m.title ?? "";
+      if (onSelect) {
+        dateEl.style.cursor = "pointer";
+        dateEl.addEventListener("click", select);
+      }
       const dateMarker = new Marker({
         element: dateEl,
         anchor: "bottom",
@@ -99,11 +108,12 @@ function drawRoutes(
       const endEl = document.createElement("div");
       endEl.className = "march-marker march-marker-end";
       endEl.textContent = "E";
-      endEl.title = "End";
-      const endMarker = new Marker({ element: endEl })
-        .setLngLat(end)
-        .setPopup(new Popup({ offset: 14 }).setText(m.title ?? "Protest"))
-        .addTo(map);
+      endEl.title = m.title ?? "End";
+      if (onSelect) {
+        endEl.style.cursor = "pointer";
+        endEl.addEventListener("click", select);
+      }
+      const endMarker = new Marker({ element: endEl }).setLngLat(end).addTo(map);
       markersRef.current.push(endMarker);
     }
   }
@@ -126,9 +136,14 @@ function drawRoutes(
 export function MapView({
   marches,
   chips = [],
+  className = "map-view",
+  onSelect,
 }: {
   marches: MarchView[];
   chips?: Chip[];
+  className?: string;
+  /** Called with a march's id when its route, start/end marker, or date chip is tapped. */
+  onSelect?: (id: string) => void;
 }) {
   const { i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -142,6 +157,8 @@ export function MapView({
   chipsRef.current = chips;
   const langRef = useRef(i18n.language);
   langRef.current = i18n.language;
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
 
   // Create the map once.
   useEffect(() => {
@@ -160,15 +177,41 @@ export function MapView({
     map.on("load", () => {
       loadedRef.current = true;
       map.resize();
-      drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, langRef.current);
+      drawRoutes(
+        map,
+        marchesRef.current,
+        chipsRef.current,
+        markersRef,
+        langRef.current,
+        onSelectRef.current,
+      );
     });
 
     // Draw once the map has settled too, in case load fired before data arrived.
     map.on("idle", () => {
       if (!loadedRef.current) return;
       if (!map.getSource("marches")) {
-        drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, langRef.current);
+        drawRoutes(
+          map,
+          marchesRef.current,
+          chipsRef.current,
+          markersRef,
+          langRef.current,
+          onSelectRef.current,
+        );
       }
+    });
+
+    // Tapping the route line itself selects that march too.
+    map.on("click", "march-lines", (e) => {
+      const id = e.features?.[0]?.properties?.id as string | undefined;
+      if (id) onSelectRef.current?.(id);
+    });
+    map.on("mouseenter", "march-lines", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "march-lines", () => {
+      map.getCanvas().style.cursor = "";
     });
 
     return () => {
@@ -191,15 +234,15 @@ export function MapView({
     if (!map) return;
     if (loadedRef.current || map.isStyleLoaded()) {
       loadedRef.current = true;
-      drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, i18n.language);
+      drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, i18n.language, onSelect);
     } else {
       map.once("idle", () => {
         loadedRef.current = true;
-        drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, i18n.language);
+        drawRoutes(map, marchesRef.current, chipsRef.current, markersRef, i18n.language, onSelect);
       });
     }
-  }, [marches, chips, i18n.language]);
+  }, [marches, chips, i18n.language, onSelect]);
 
   // data-lenis-prevent: let wheel events zoom the map instead of scrolling the page.
-  return <div ref={containerRef} className="map-view" data-lenis-prevent />;
+  return <div ref={containerRef} className={className} data-lenis-prevent />;
 }
