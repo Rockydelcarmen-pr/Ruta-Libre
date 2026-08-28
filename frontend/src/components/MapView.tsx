@@ -138,12 +138,15 @@ export function MapView({
   chips = [],
   className = "map-view",
   onSelect,
+  interactive = true,
 }: {
   marches: MarchView[];
   chips?: Chip[];
   className?: string;
   /** Called with a march's id when its route, start/end marker, or date chip is tapped. */
   onSelect?: (id: string) => void;
+  /** false renders a static preview: no pan/zoom/rotate, so page scroll isn't hijacked. */
+  interactive?: boolean;
 }) {
   const { i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -169,8 +172,9 @@ export function MapView({
       center: SAN_JUAN,
       zoom: 13,
       attributionControl: { compact: true },
+      interactive,
     });
-    map.addControl(new NavigationControl(), "top-right");
+    if (interactive) map.addControl(new NavigationControl(), "top-right");
     mapRef.current = map;
     map.on("error", (e) => console.error("[maplibre]", e.error));
 
@@ -244,5 +248,12 @@ export function MapView({
   }, [marches, chips, i18n.language, onSelect]);
 
   // data-lenis-prevent: let wheel events zoom the map instead of scrolling the page.
-  return <div ref={containerRef} className={className} data-lenis-prevent />;
+  // Skipped for non-interactive previews so a swipe over the map keeps scrolling the page.
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      data-lenis-prevent={interactive || undefined}
+    />
+  );
 }

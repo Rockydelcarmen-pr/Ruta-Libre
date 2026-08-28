@@ -91,6 +91,7 @@ export function App() {
                   usingSample={usingSample}
                   chips={chips}
                   onChipsChanged={bumpChips}
+                  onOpenMap={() => setView("map")}
                   q={q}
                 />
               </>

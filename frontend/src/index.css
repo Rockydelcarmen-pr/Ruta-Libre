@@ -387,6 +387,26 @@ body {
   overflow: hidden;
   margin-bottom: 10px;
 }
+/* Homepage overview: a static, more-square preview. Non-interactive (see
+   MapView's `interactive` prop), so a swipe over it scrolls the page instead
+   of panning the map; tapping it opens the full map screen. */
+.map-preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  max-height: 260px;
+  padding: 0; margin: 0 0 10px; border: 0;
+  background: none; font: inherit; cursor: pointer;
+  position: relative;
+  border-radius: var(--r);
+}
+.map-preview .map-view { height: 100%; margin-bottom: 0; pointer-events: none; }
+.map-preview-hint {
+  position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
+  font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .04em; font-size: 11px; color: #fff;
+  background: rgba(13,27,42,.72); padding: 5px 12px; border-radius: 999px;
+}
 .march-marker {
   width: 20px; height: 20px; border-radius: 50%;
   background: var(--red); border: 2px solid #fff;

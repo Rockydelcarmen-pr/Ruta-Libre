@@ -20,6 +20,7 @@ export function MarchesFeed({
   usingSample,
   chips,
   onChipsChanged,
+  onOpenMap,
   q,
 }: {
   lang: Lang;
@@ -29,6 +30,7 @@ export function MarchesFeed({
   usingSample: boolean;
   chips: Chip[];
   onChipsChanged: () => void;
+  onOpenMap: () => void;
   q: string;
 }) {
   const { t } = useTranslation();
@@ -76,7 +78,15 @@ export function MarchesFeed({
 
       {!loading && filtered.length > 0 && (
         <>
-          <MapView marches={filtered} chips={chips} />
+          <button
+            type="button"
+            className="map-preview"
+            onClick={onOpenMap}
+            aria-label={t("feed.openMap", "Open full map")}
+          >
+            <MapView marches={filtered} chips={chips} interactive={false} />
+            <span className="map-preview-hint">{t("feed.openMap", "Tap to explore map")}</span>
+          </button>
           {usingDemoMap && <p className="map-note">{t("feed.mapNote")}</p>}
         </>
       )}
